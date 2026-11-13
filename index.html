@@ -47,13 +47,26 @@ input[type=range]{accent-color:#6366f1}
 .vfade{animation:vf .32s ease-out}
 @keyframes vf{from{opacity:0;transform:translateY(6px)}}
 @media (prefers-reduced-motion:reduce){.vfade{animation:none}}
+@keyframes menuIn{from{opacity:0;transform:translateY(-6px) scale(.97)}}
+#menuPanel{transform-origin:top left;animation:menuIn .18s ease-out}
+.mi{display:flex;align-items:center;gap:12px;width:100%;padding:10px 12px;border-radius:12px;text-align:left;transition:background .15s;-webkit-tap-highlight-color:transparent}
+.mi:hover,.mi:focus-visible{background:rgba(51,65,85,.6)}
+.mi svg{width:20px;height:20px;flex:none;color:#94a3b8}
+.mi b{display:block;font-size:13.5px;font-weight:600;color:#f1f5f9}
+.mi small{display:block;font-size:11px;color:#64748b;line-height:1.3}
+.mi-on{background:rgba(99,102,241,.14)}
+.mi-on svg{color:#a5b4fc}
+.mi-on b{color:#c7d2fe}
+@keyframes sheetIn{from{transform:translateY(24px);opacity:0}}
+#installSheet .sheet{animation:sheetIn .25s ease-out}
+@media (prefers-reduced-motion:reduce){#menuPanel,#installSheet .sheet{animation:none}}
 </style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen antialiased">
 <svg width="0" height="0" class="absolute" aria-hidden="true"><symbol id="logo" viewBox="0 0 512 512"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6366f1"/><stop offset="1" stop-color="#14b8a6"/></linearGradient></defs><rect width="512" height="512" rx="112" fill="url(#g)"/><g fill="#fff" fill-opacity=".28"><rect x="132" y="292" width="52" height="108" rx="12"/><rect x="230" y="242" width="52" height="158" rx="12"/><rect x="328" y="192" width="52" height="208" rx="12"/></g>
 <g fill="none" stroke="#fff" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"><path d="M120 332L204 248L262 302L384 162"/><path d="M312 154H392V234"/></g></symbol></svg>
 <!-- Install -->
-<div id="installBanner" class="hidden fixed bottom-24 lg:bottom-4 left-4 right-4 z-50 max-w-md mx-auto">
+<div id="installBanner" class="hidden fixed bottom-4 left-4 right-4 z-50 max-w-md mx-auto">
 <div class="bg-slate-800 border border-slate-700 rounded-2xl p-3.5 shadow-2xl flex items-center gap-3">
 <svg class="w-10 h-10 rounded-xl shrink-0" aria-hidden="true"><use href="#logo"/></svg>
 <div class="flex-1 min-w-0"><p class="font-semibold text-sm">Cài đặt app</p><p class="text-xs text-slate-400">Thêm vào màn hình chính</p></div>
@@ -65,7 +78,7 @@ input[type=range]{accent-color:#6366f1}
 <header class="sticky top-0 z-40 bg-slate-900/95 backdrop-blur-xl border-b border-slate-800/80">
 <div class="max-w-7xl mx-auto px-3 sm:px-5 flex items-center justify-between h-13 gap-2 py-2.5">
 <div class="flex items-center gap-2">
-<svg class="w-8 h-8 rounded-lg shadow-lg shrink-0" role="img" aria-label="VN Stock Analyst"><use href="#logo"/></svg>
+<div class="relative" id="menuWrap"><button type="button" id="menuBtn" aria-haspopup="menu" aria-expanded="false" aria-controls="menuPanel" aria-label="Mở menu" class="flex items-center gap-1 rounded-xl p-0.5 pr-1.5 hover:bg-slate-800 active:scale-95 transition"><svg class="w-8 h-8 rounded-lg shadow-lg shrink-0" aria-hidden="true"><use href="#logo"/></svg><svg id="menuChev" class="w-3.5 h-3.5 text-slate-400 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg></button><div id="menuPanel" role="menu" aria-label="Chức năng chính" class="hidden absolute left-0 top-full mt-2 w-[17rem] max-w-[calc(100vw-1.5rem)] rounded-2xl bg-slate-900 border border-slate-700/80 shadow-2xl shadow-black/50 p-1.5 z-50"><button type="button" role="menuitem" class="mi mi-on" data-v="analyze"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg><span><b>Phân tích cổ phiếu</b><small>Sức khỏe, định giá, rủi ro</small></span></button><button type="button" role="menuitem" class="mi" data-v="board"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/></svg><span><b>Bảng giá VN-Index</b><small>Chỉ số, 30 mã, bản đồ nhiệt</small></span></button><button type="button" role="menuitem" class="mi" data-v="sector"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm10 0a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zm10 0a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"/></svg><span><b>Sức mạnh ngành</b><small>Xếp hạng ngành và doanh nghiệp</small></span></button><button type="button" role="menuitem" class="mi" data-v="data"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 7c0-1.1 3.6-2 8-2s8 .9 8 2-3.6 2-8 2-8-.9-8-2zm0 0v10c0 1.1 3.6 2 8 2s8-.9 8-2V7M4 12c0 1.1 3.6 2 8 2s8-.9 8-2"/></svg><span><b>Nhập dữ liệu</b><small>Thêm mã bằng số liệu thật</small></span></button><div class="my-1.5 border-t border-slate-800"></div><button type="button" role="menuitem" id="menuInstall" class="mi"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 3v12m0 0l-4-4m4 4l4-4M5 17v2a2 2 0 002 2h10a2 2 0 002-2v-2"/></svg><span class="flex-1"><b>Cài app ra màn hình</b><small>Mở nhanh như app trên điện thoại</small></span><span id="installDot" class="hidden w-2 h-2 rounded-full bg-emerald-400 shrink-0" title="Sẵn sàng cài"></span></button></div></div>
 <div class="hidden sm:block"><h1 class="text-sm font-bold leading-tight">VN Stock Analyst</h1><p class="text-[10px] text-slate-500">Pro · Phân tích chuyên sâu</p></div>
 </div>
 <div class="flex-1 max-w-[180px] sm:max-w-xs relative">
@@ -79,9 +92,9 @@ input[type=range]{accent-color:#6366f1}
 </button>
 </div>
 </header>
-<nav id="appNav" aria-label="Chức năng chính" class="fixed z-40 bottom-0 inset-x-0 lg:inset-x-auto lg:left-0 lg:top-[57px] lg:w-20 flex lg:flex-col justify-around lg:justify-start lg:gap-1 lg:pt-4 bg-slate-900/95 backdrop-blur-xl border-t lg:border-t-0 lg:border-r border-slate-800/80" style="padding-bottom:env(safe-area-inset-bottom,0px)"><button class="nv nv-on" data-v="analyze"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg><span>Phân tích</span></button><button class="nv" data-v="board"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/></svg><span>Bảng giá</span></button><button class="nv" data-v="sector"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm10 0a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zm10 0a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"/></svg><span>Ngành</span></button><button class="nv" data-v="data"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 7c0-1.1 3.6-2 8-2s8 .9 8 2-3.6 2-8 2-8-.9-8-2zm0 0v10c0 1.1 3.6 2 8 2s8-.9 8-2V7M4 12c0 1.1 3.6 2 8 2s8-.9 8-2"/></svg><span>Dữ liệu</span></button></nav>
 
-<main class="max-w-7xl mx-auto px-3 sm:px-5 lg:pl-24 py-5 pb-24 lg:pb-8">
+
+<main class="max-w-7xl mx-auto px-3 sm:px-5 py-5">
 <div id="v-analyze">
 <div id="loadingState" class="hidden"><div class="flex flex-col items-center justify-center py-24 gap-3"><div class="w-12 h-12 border-[3px] border-indigo-500/25 border-t-indigo-500 rounded-full animate-spin"></div><p class="text-slate-400 text-sm">Đang tính toán chỉ số & mô hình định giá...</p></div></div>
 
@@ -333,9 +346,18 @@ input[type=range]{accent-color:#6366f1}
 <div id="v-sector" class="hidden space-y-4"></div>
 <div id="v-data" class="hidden space-y-4"></div>
 </main>
-<footer class="border-t border-slate-800/60 mt-8 py-5 pb-24 lg:pb-5 lg:pl-20"><div class="max-w-7xl mx-auto px-4 text-center text-[11px] text-slate-600">VN Stock Analyst Pro · Dữ liệu mẫu minh họa · Không phải khuyến nghị đầu tư</div></footer>
+<footer class="border-t border-slate-800/60 mt-8 py-5"><div class="max-w-7xl mx-auto px-4 text-center text-[11px] text-slate-600">VN Stock Analyst Pro · Dữ liệu mẫu minh họa · Không phải khuyến nghị đầu tư</div></footer>
 
-<div id="toast" role="status" aria-live="polite" class="fixed bottom-24 lg:bottom-5 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-sm shadow-2xl opacity-0 translate-y-3 transition pointer-events-none max-w-[90vw] text-center"></div>
+<div id="installSheet" class="hidden fixed inset-0 z-[60]" role="dialog" aria-modal="true" aria-labelledby="isTitle">
+<div class="absolute inset-0 bg-black/60" data-close-sheet></div>
+<div class="sheet absolute bottom-0 inset-x-0 sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:w-[26rem] bg-slate-900 border border-slate-700/80 rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl" style="padding-bottom:max(1.25rem,env(safe-area-inset-bottom,0px))">
+<div class="flex items-center gap-3 mb-4"><svg class="w-12 h-12 rounded-xl shrink-0" aria-hidden="true"><use href="#logo"/></svg><div class="flex-1 min-w-0"><h2 id="isTitle" class="font-bold text-base">Cài VN Stock ra màn hình chính</h2><p class="text-xs text-slate-400">Làm theo các bước dưới đây</p></div><button type="button" class="text-slate-500 hover:text-white p-1" data-close-sheet aria-label="Đóng"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button></div>
+<div id="isWarn" class="hidden text-xs text-amber-300 bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 mb-3"></div>
+<ol id="isSteps" class="space-y-3 text-sm text-slate-300"></ol>
+<details class="mt-4 text-xs text-slate-400"><summary class="cursor-pointer text-indigo-300 font-medium">Cách cài trên thiết bị khác</summary><div id="isOther" class="mt-2 space-y-2"></div></details>
+<button type="button" class="mt-5 w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2.5 rounded-xl" data-close-sheet>Đã hiểu</button>
+</div></div>
+<div id="toast" role="status" aria-live="polite" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-sm shadow-2xl opacity-0 translate-y-3 transition pointer-events-none max-w-[90vw] text-center"></div>
 <script>
 const DB={
 VNM:{name:"CTCP Sữa Việt Nam",t:"VNM",sec:"Thực phẩm & Đồ uống",ex:"HOSE",price:57800,chg:1.58,mcap:120.5,sh:2085,h:{t:82,l:88,p:85,v:78,e:80},q:84,
@@ -549,7 +571,7 @@ const VIEWS=["analyze","board","sector","data"];
 function showView(v,opt){
   if(!VIEWS.includes(v))v="analyze";
   VIEWS.forEach(k=>{const el=$("v-"+k),on=k===v;el.classList.toggle("hidden",!on);if(on){el.classList.remove("vfade");void el.offsetWidth;el.classList.add("vfade");}});
-  document.querySelectorAll("#appNav [data-v]").forEach(b=>{const on=b.dataset.v===v;b.classList.toggle("nv-on",on);b.setAttribute("aria-current",on?"page":"false");});
+  document.querySelectorAll("#menuPanel [data-v]").forEach(b=>{const on=b.dataset.v===v;b.classList.toggle("mi-on",on);b.setAttribute("aria-current",on?"page":"false");});
   if(v!=="board"){simStop();liveStop();}
   if(v==="board")boardShow();
   if(v==="sector")sectorRender();
@@ -557,7 +579,7 @@ function showView(v,opt){
   try{history.replaceState(null,"","#"+v);localStorage.setItem("vsa.view",v);}catch(e){}
   if(!(opt&&opt.keepScroll))window.scrollTo({top:0});
 }
-document.querySelectorAll("#appNav [data-v]").forEach(b=>b.addEventListener("click",()=>showView(b.dataset.v)));
+document.querySelectorAll("#menuPanel [data-v]").forEach(b=>b.addEventListener("click",()=>showView(b.dataset.v)));
 window.addEventListener("hashchange",()=>{const h=location.hash.slice(1);if(VIEWS.includes(h))showView(h);});
 
 /* ---------- Bảng giá VN-Index ---------- */
@@ -1023,6 +1045,49 @@ loadCustom();
   const h=location.hash.slice(1);let v=VIEWS.includes(h)?h:null;
   if(!v){try{v=localStorage.getItem("vsa.view");}catch(e){}}
   showView(VIEWS.includes(v)?v:"analyze",{keepScroll:1});
+})();
+</script>
+
+<script>
+/* Menu thả xuống từ logo + nút cài app ra màn hình chính */
+(function(){
+  const btn=$("menuBtn"),panel=$("menuPanel"),chev=$("menuChev"),sheet=$("installSheet");
+  const isOpen=()=>!panel.classList.contains("hidden");
+  function open(o){panel.classList.toggle("hidden",!o);btn.setAttribute("aria-expanded",String(o));chev.style.transform=o?"rotate(180deg)":"";if(o)refreshInstall();}
+  btn.addEventListener("click",e=>{e.stopPropagation();open(!isOpen());});
+  document.addEventListener("click",e=>{if(isOpen()&&!e.target.closest("#menuWrap"))open(false);});
+  panel.addEventListener("click",e=>{if(e.target.closest("[data-v]"))open(false);});
+  document.addEventListener("keydown",e=>{if(e.key!=="Escape")return;if(!sheet.classList.contains("hidden"))closeSheet();else if(isOpen()){open(false);btn.focus();}});
+
+  const standalone=()=>(window.matchMedia&&matchMedia("(display-mode: standalone)").matches)||navigator.standalone===true;
+  function refreshInstall(){$("menuInstall").classList.toggle("hidden",standalone());$("installDot").classList.toggle("hidden",!dp);}
+  const ua=navigator.userAgent||"",iOS=/iphone|ipad|ipod/i.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1),android=/android/i.test(ua),inApp=/FBAN|FBAV|Zalo|Instagram|Line\/|TikTok|musical_ly/i.test(ua);
+  const step=t=>'<li class="flex gap-3"><span class="w-6 h-6 rounded-full bg-indigo-600 text-white text-xs font-bold flex items-center justify-center shrink-0 stepn"></span><span>'+t+'</span></li>';
+  const GUIDE={
+    android:['Bấm nút <b>⋮</b> (ba chấm) ở góc phải trên của Chrome.','Chọn <b>Cài đặt ứng dụng</b> hoặc <b>Thêm vào màn hình chính</b>.','Bấm <b>Cài đặt</b> rồi xác nhận. Biểu tượng VN Stock sẽ hiện trên màn hình chính.'],
+    ios:['Mở trang này bằng <b>Safari</b>, bấm nút <b>Chia sẻ</b> (hình vuông có mũi tên hướng lên) ở thanh dưới.','Kéo xuống và chọn <b>Thêm vào MH chính</b>.','Bấm <b>Thêm</b> ở góc phải trên. Biểu tượng VN Stock sẽ hiện trên màn hình chính.'],
+    pc:['Nhìn bên phải thanh địa chỉ của Chrome hoặc Edge, bấm biểu tượng <b>Cài đặt</b> (màn hình có mũi tên xuống).','Nếu không thấy, mở menu <b>⋮</b> rồi chọn <b>Truyền, lưu và chia sẻ</b> và <b>Cài đặt trang này dưới dạng ứng dụng</b>.','Bấm <b>Cài đặt</b> để xác nhận.']
+  };
+  const NAME={android:"Android (Chrome)",ios:"iPhone, iPad (Safari)",pc:"Máy tính (Chrome, Edge)"};
+  const fill=(el,k)=>{el.innerHTML=GUIDE[k].map(step).join("");el.querySelectorAll(".stepn").forEach((s,i)=>s.textContent=i+1);};
+  function openSheet(){
+    const k=iOS?"ios":android?"android":"pc";
+    fill($("isSteps"),k);
+    $("isOther").innerHTML=["android","ios","pc"].filter(x=>x!==k).map(x=>'<div><div class="font-semibold text-slate-300 mb-1">'+NAME[x]+'</div><ol class="list-decimal pl-5 space-y-1">'+GUIDE[x].map(t=>"<li>"+t+"</li>").join("")+"</ol></div>").join("");
+    const w=$("isWarn");w.classList.toggle("hidden",!inApp);w.textContent=inApp?"Ông đang mở trong Zalo, Facebook hoặc ứng dụng khác. Hãy bấm ⋮ rồi chọn Mở bằng trình duyệt (Chrome hoặc Safari) trước, sau đó cài.":"";
+    sheet.classList.remove("hidden");document.body.style.overflow="hidden";
+  }
+  function closeSheet(){sheet.classList.add("hidden");document.body.style.overflow="";}
+  window.closeSheet=closeSheet;
+  sheet.addEventListener("click",e=>{if(e.target.closest("[data-close-sheet]"))closeSheet();});
+  async function installNow(){
+    if(standalone()){toast("App đã được cài trên máy này");return;}
+    if(dp){const p=dp;dp=null;try{p.prompt();const c=await p.userChoice;if(c&&c.outcome==="accepted")toast("Đang cài app ra màn hình");}catch(e){openSheet();}const b=$("installBanner");if(b)b.classList.add("hidden");return;}
+    openSheet();
+  }
+  $("menuInstall").addEventListener("click",()=>{open(false);installNow();});
+  window.addEventListener("appinstalled",()=>{toast("Đã cài app ra màn hình chính");const b=$("installBanner");if(b)b.classList.add("hidden");refreshInstall();});
+  refreshInstall();
 })();
 </script>
 </body>
