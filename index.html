@@ -309,6 +309,9 @@ header{padding-top:env(safe-area-inset-top,0px)}
 <div id="bFltRow" class="hidden px-3 pb-2 gap-1.5 overflow-x-auto">
 <button type="button" class="chip chip-on" data-s="">Tất cả</button><button type="button" class="chip" data-s="c"><i class="text-fuchsia-400 not-italic">●</i> Trần</button><button type="button" class="chip" data-s="u"><i class="text-emerald-400 not-italic">●</i> Tăng</button><button type="button" class="chip" data-s="r"><i class="text-amber-300 not-italic">●</i> Tham chiếu</button><button type="button" class="chip" data-s="d"><i class="text-rose-400 not-italic">●</i> Giảm</button><button type="button" class="chip" data-s="f"><i class="text-cyan-300 not-italic">●</i> Sàn</button>
 </div>
+<div id="bExRow" class="flex px-3 pb-2 gap-1.5 overflow-x-auto">
+<button type="button" class="chip chip-on" data-ex="all">Tất cả sàn</button><button type="button" class="chip" data-ex="HOSE">HOSE</button><button type="button" class="chip" data-ex="HNX">HNX</button><button type="button" class="chip" data-ex="UPCOM">UPCOM</button>
+</div>
 <div class="brow bh border-y border-slate-800/90 h-9">
 <button type="button" data-sk="t" class="text-left">Mã<i class="not-italic"></i></button>
 <span class="text-center">Giá</span>
@@ -654,7 +657,7 @@ const mb32=a=>()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.
 const hs=s=>{let h=2166136261;for(const c of s){h^=c.charCodeAt(0);h=Math.imul(h,16777619);}return h>>>0;};
 const stOf=r=>r.px>=ceilP(r.ref)-1e-9?"c":r.px<=floorP(r.ref)+1e-9?"f":r.px>r.ref+1e-9?"u":r.px<r.ref-1e-9?"d":"r";
 const STC={c:"text-fuchsia-400",u:"text-emerald-400",r:"text-amber-300",d:"text-rose-400",f:"text-cyan-300"};
-const B={inited:false,rows:[],symbols:null,idx:{v:1642.35,ref:1636.9},mode:"table",f:"all",q:"",sk:"t",sd:1,s:"",sy:0,sim:false,series:null,ls:[],labels:[],live:false,liveAt:null,mini:{vn30:{v:1815.4,ref:1809.2},hnx:{v:268.7,ref:269.4},upcom:{v:121.9,ref:121.5}}};
+const B={inited:false,rows:[],symbols:null,markets:{},idx:{v:1642.35,ref:1636.9},mode:"table",f:"all",ex:"all",q:"",sk:"t",sd:1,s:"",sy:0,sim:false,series:null,ls:[],labels:[],live:false,liveAt:null,mini:{vn30:{v:1815.4,ref:1809.2},hnx:{v:268.7,ref:269.4},upcom:{v:121.9,ref:121.5}}};
 let BCH=null,simT=null;
 
 function seedRows(){
@@ -750,6 +753,7 @@ function boardSide(){
 }
 function boardRender(){
   let rows=B.rows.filter(r=>B.f==="all"||(B.f==="w"&&inWL(r.t))||(B.f==="a"&&DB[r.t]));
+  if(B.ex!=="all")rows=rows.filter(r=>B.markets[r.t]===B.ex);
   if(B.s)rows=rows.filter(r=>stOf(r)===B.s);
   if(B.q)rows=rows.filter(r=>r.t.includes(B.q));
   rows=[...rows].sort((a,b)=>{const x=sortVal(a,B.sk),y=sortVal(b,B.sk);return(typeof x==="string"?x.localeCompare(y):x-y)*B.sd;});
@@ -757,11 +761,12 @@ function boardRender(){
   const sv=B.sk+":"+B.sd,so=$("bSort");so.value=[...so.options].some(o=>o.value===sv)?sv:"x";
   document.querySelectorAll("#bTabs [data-f]").forEach(b=>b.classList.toggle("btab-on",b.dataset.f===B.f));
   document.querySelectorAll("#bFltRow [data-s]").forEach(b=>b.classList.toggle("chip-on",b.dataset.s===B.s));
+  document.querySelectorAll("#bExRow [data-ex]").forEach(b=>b.classList.toggle("chip-on",b.dataset.ex===B.ex));
   $("bFltBtn").classList.toggle("ibtn-on",!!B.s);
   $("bBody").innerHTML=rows.length?rows.map(r=>{
     const s=stOf(r),c=STC[s],d=r.px-r.ref,p=pctOf(r),f=r.flash==="u"?"fl-u":r.flash==="d"?"fl-d":"",same=Math.abs(d)<1e-9;
     return'<div class="brow brow-r '+f+'" data-go="'+esc(r.t)+'" role="button" tabindex="0">'+
-      '<div class="min-w-0"><div class="flex items-center gap-1"><span class="font-bold text-[15px] '+c+'">'+esc(r.t)+'</span>'+(inWL(r.t)?'<span class="text-amber-300 text-[8px] leading-none" title="Đang theo dõi">●</span>':'')+'</div><div class="text-[10px] text-slate-500 truncate">'+esc(r.n||"")+'</div></div>'+
+      '<div class="min-w-0"><div class="flex items-center gap-1"><span class="font-bold text-[15px] '+c+'">'+esc(r.t)+'</span>'+(B.markets[r.t]?'<span class="text-[9px] text-slate-500">'+esc(B.markets[r.t])+'</span>':'')+(inWL(r.t)?'<span class="text-amber-300 text-[8px] leading-none" title="Đang theo dõi">●</span>':'')+'</div><div class="text-[10px] text-slate-500 truncate">'+esc(r.n||"")+'</div></div>'+
       '<div>'+spark(r,c)+'</div>'+
       '<div class="text-right stat font-semibold text-[15px] '+c+'">'+nv(r.px,2)+'</div>'+
       '<div class="text-right stat leading-tight '+c+'">'+(same?"":'<div class="text-[13px]">'+(d>0?"+":"")+nv(d,2)+'</div><div class="text-[10px] opacity-80">'+(p>0?"+":"")+nv(p,2)+'%</div>')+'</div>'+
@@ -855,6 +860,7 @@ document.addEventListener("click",e=>{
   const sk=e.target.closest("[data-sk]");if(sk){if(B.sk===sk.dataset.sk)B.sd*=-1;else{B.sk=sk.dataset.sk;B.sd=sk.dataset.sk==="t"?1:-1;}boardRender();return;}
   const ff=e.target.closest("#bTabs [data-f]");if(ff){B.f=ff.dataset.f;boardRender();return;}
   const fs=e.target.closest("#bFltRow [data-s]");if(fs){B.s=fs.dataset.s;boardRender();return;}
+  const fe=e.target.closest("#bExRow [data-ex]");if(fe){B.ex=fe.dataset.ex;boardRender();return;}
   if(e.target.closest("#bAddBtn")){togRow("bAddRow","bAddBtn");return;}
   if(e.target.closest("#bSrchBtn")){togRow("bSrchRow","bSrchBtn");return;}
   if(e.target.closest("#bFltBtn")){togRow("bFltRow","bFltBtn");return;}
@@ -1075,8 +1081,9 @@ window.tab=function(id){_tab(id);const b=document.querySelector('.tab[data-t="'+
 /* ---------- Nguồn giá trực tuyến ---------- */
 // VPS public feed: real-time snapshot, free/no API key, CORS enabled.
 // Prices are in thousand VND, matching the board's display unit.
-const SRC={url:"https://bgapidatafeed.vps.com.vn/getliststockdata/{symbols}",key:"",hdr:"Authorization",every:30,hours:true,on:true};
-try{Object.assign(SRC,JSON.parse(localStorage.getItem("vsa.src")||"{}"));}catch(e){}
+const DEFAULT_VPS_URL="https://bgapidatafeed.vps.com.vn/getliststockdata/{symbols}";
+const SRC={url:DEFAULT_VPS_URL,key:"",hdr:"Authorization",every:30,hours:true,on:true};
+try{const saved=JSON.parse(localStorage.getItem("vsa.src")||"null");if(saved&&typeof saved==="object"){Object.assign(SRC,saved);if(!saved.url){SRC.url=DEFAULT_VPS_URL;SRC.on=true;}}}catch(e){}
 function saveSrc(){try{localStorage.setItem("vsa.src",JSON.stringify(SRC));}catch(e){}}
 let liveT=null,srcWired=false;
 const UNIVERSE_URLS=["HOSE","HNX","UPCOM"].map(s=>"https://wifeed.vn/api/thong-tin-co-phieu/danh-sach-ma-chung-khoan?san="+s+"&apikey=demo");
@@ -1168,8 +1175,9 @@ async function loadFullUniverse(){
   universePromise=(async()=>{
     try{
       const lists=await Promise.all(UNIVERSE_URLS.map(u=>fetchJsonRetry(u,{headers:{Accept:"application/json"}})));
-      const names=new Map();lists.forEach(j=>(j.data||[]).forEach(x=>{const t=String(x.code||"").toUpperCase().replace(/[^A-Z0-9]/g,"");if(t)names.set(t,x.fullname_vi||"");}));
+      const names=new Map(),markets={};lists.forEach((j,i)=>(j.data||[]).forEach(x=>{const t=String(x.code||"").toUpperCase().replace(/[^A-Z0-9]/g,"");if(t){names.set(t,x.fullname_vi||"");markets[t]=["HOSE","HNX","UPCOM"][i];}}));
       B.symbols=[...names.keys()].sort();
+      B.markets=markets;
       B.rows.forEach(r=>{if(names.has(r.t)&&names.get(r.t))r.n=names.get(r.t);});
       srcStatus("Đã nạp "+B.symbols.length+" mã HOSE/HNX/UPCOM. Đang lấy giá theo lô...","");
       boardRender();
