@@ -355,7 +355,7 @@ Giá tính bằng nghìn đồng, biên độ HOSE ±7%. Chấm vàng cạnh mã
 </div>
 <details id="srcBox" class="card p-4">
 <summary class="cursor-pointer text-sm font-semibold">Nguồn giá trực tuyến<span id="srcState" class="ml-2 text-[11px] font-normal text-slate-500">VPS miễn phí · chưa lấy dữ liệu</span></summary>
-<p class="text-xs text-slate-500 mt-2 mb-3">Mặc định app dùng bảng giá công khai VPS, không cần khoá: giá khớp, tham chiếu, trần/sàn, khối lượng và dư mua/bán. Trang tự nhận các tên cột thường gặp và dùng đơn vị nghìn đồng. Có thể dùng <span class="font-mono text-slate-300">{symbols}</span> trong địa chỉ để truyền danh sách mã. BCTC/ratios của app vẫn là dữ liệu mẫu, chưa được thay thế bằng số liệu thật.</p>
+<p class="text-xs text-slate-500 mt-2 mb-3">Mặc định app dùng bảng giá công khai VPS, không cần khoá: giá khớp, tham chiếu, trần/sàn, khối lượng và dư mua/bán cho toàn bộ mã HOSE, HNX và UPCOM. Danh sách mã được tải từ WiFeed rồi gửi VPS theo các lô nhỏ để tránh giới hạn URL. Giá dùng đơn vị nghìn đồng. BCTC/ratios của app vẫn là dữ liệu mẫu, chưa được thay thế bằng số liệu thật.</p>
 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
 <label class="block text-xs text-slate-400">Địa chỉ nguồn (URL)<input id="srcUrl" type="url" inputmode="url" placeholder="https://…" class="mt-1 w-full bg-slate-800/80 border border-slate-700 rounded-xl py-2 px-3 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-slate-600"/></label>
 <label class="block text-xs text-slate-400">Khoá truy cập (nếu có)<input id="srcKey" type="password" autocomplete="off" class="mt-1 w-full bg-slate-800/80 border border-slate-700 rounded-xl py-2 px-3 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"/></label>
@@ -654,7 +654,7 @@ const mb32=a=>()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.
 const hs=s=>{let h=2166136261;for(const c of s){h^=c.charCodeAt(0);h=Math.imul(h,16777619);}return h>>>0;};
 const stOf=r=>r.px>=ceilP(r.ref)-1e-9?"c":r.px<=floorP(r.ref)+1e-9?"f":r.px>r.ref+1e-9?"u":r.px<r.ref-1e-9?"d":"r";
 const STC={c:"text-fuchsia-400",u:"text-emerald-400",r:"text-amber-300",d:"text-rose-400",f:"text-cyan-300"};
-const B={inited:false,rows:[],idx:{v:1642.35,ref:1636.9},mode:"table",f:"all",q:"",sk:"t",sd:1,s:"",sy:0,sim:false,series:null,ls:[],labels:[],live:false,liveAt:null,mini:{vn30:{v:1815.4,ref:1809.2},hnx:{v:268.7,ref:269.4},upcom:{v:121.9,ref:121.5}}};
+const B={inited:false,rows:[],symbols:null,idx:{v:1642.35,ref:1636.9},mode:"table",f:"all",q:"",sk:"t",sd:1,s:"",sy:0,sim:false,series:null,ls:[],labels:[],live:false,liveAt:null,mini:{vn30:{v:1815.4,ref:1809.2},hnx:{v:268.7,ref:269.4},upcom:{v:121.9,ref:121.5}}};
 let BCH=null,simT=null;
 
 function seedRows(){
@@ -774,7 +774,7 @@ function boardRender(){
 function boardInit(){if(!B.inited){B.inited=true;B.series=idxSeries();boardLoad();if(typeof WL!=="undefined"&&WL.length)B.f="w";}}
 function miniDraw(){$("bxMini").innerHTML=miniIdx("VN30",B.mini.vn30.v,B.mini.vn30.ref)+miniIdx("HNX",B.mini.hnx.v,B.mini.hnx.ref)+miniIdx("UPCOM",B.mini.upcom.v,B.mini.upcom.ref);stripDraw();}
 function boardShow(){
-  boardInit();miniDraw();srcInit();srcBadge();idxUpdate();boardRender();if(SRC.on&&SRC.url)liveStart();
+  boardInit();miniDraw();srcInit();srcBadge();idxUpdate();boardRender();if(SRC.on&&SRC.url)loadFullUniverse();
 }
 function simStart(){
   simStop();B.sim=true;
@@ -1079,6 +1079,8 @@ const SRC={url:"https://bgapidatafeed.vps.com.vn/getliststockdata/{symbols}",key
 try{Object.assign(SRC,JSON.parse(localStorage.getItem("vsa.src")||"{}"));}catch(e){}
 function saveSrc(){try{localStorage.setItem("vsa.src",JSON.stringify(SRC));}catch(e){}}
 let liveT=null,srcWired=false;
+const UNIVERSE_URLS=["HOSE","HNX","UPCOM"].map(s=>"https://wifeed.vn/api/thong-tin-co-phieu/danh-sach-ma-chung-khoan?san="+s+"&apikey=demo");
+let universePromise=null;
 const KS={s:["symbol","ticker","code","stocksymbol","sym","s","mack","ma"],p:["price","matchprice","lastprice","last","closeprice","close","c","matchedprice","giakhop","gia"],r:["refprice","referenceprice","reference","basicprice","priorcloseprice","priorclose","r","tc"],v:["volume","totalvolume","accumulatedvol","nmtotaltradedqty","totalmatchvol","matchvolume","vol","v","klgd","dealvolume"]};
 const IDXMAP={VNINDEX:"vni",VNI:"vni",VN30:"vn30",VN30INDEX:"vn30",HNXINDEX:"hnx",HNX:"hnx",UPCOMINDEX:"upcom",UPCOM:"upcom"};
 function findArr(j,d){
@@ -1095,6 +1097,20 @@ function parseQuotes(j){
     out.push({t:String(s).toUpperCase().replace(/[^A-Z0-9]/g,""),p,r:r>0?r:null,v:v>=0?v:null});
   });
   return out.length?out:null;
+}
+async function fetchJsonRetry(url,init={},attempts=3){
+  let last;
+  for(let i=0;i<attempts;i++){
+    try{
+      const res=await fetch(url,init);
+      if(!res.ok)throw new Error("Nguồn trả về lỗi HTTP "+res.status+".");
+      return await res.json();
+    }catch(e){
+      last=e;
+      if(i+1<attempts)await new Promise(r=>setTimeout(r,350*(i+1)));
+    }
+  }
+  throw last;
 }
 function applyLive(j){
   const q=parseQuotes(j);if(!q)return 0;
@@ -1126,22 +1142,44 @@ function srcBadge0(){
 }
 async function srcFetch(){
   if(!SRC.url){srcStatus("Chưa nhập địa chỉ nguồn.","err");return false;}
-  const syms=B.rows.map(r=>r.t).join(","),url=SRC.url.replace("{symbols}",encodeURIComponent(syms)),headers={Accept:"application/json"};
+  const symbols=B.symbols&&B.symbols.length?B.symbols:B.rows.map(r=>r.t),headers={Accept:"application/json"};
   if(SRC.key){const h=SRC.hdr||"Authorization";headers[h]=h.toLowerCase()==="authorization"?"Bearer "+SRC.key:SRC.key;}
   const ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),10000);
   try{
-    const res=await fetch(url,{headers,signal:ctl.signal});
-    if(!res.ok)throw new Error("Nguồn trả về lỗi HTTP "+res.status+".");
-    const n=applyLive(await res.json());
+    const isVps=SRC.url.includes("bgapidatafeed.vps.com.vn/getliststockdata/{symbols}");
+    const batches=isVps?Array.from({length:Math.ceil(symbols.length/200)},(_,i)=>symbols.slice(i*200,(i+1)*200)):[symbols];
+    const payloads=await Promise.all(batches.map(async batch=>{
+      const url=SRC.url.replace("{symbols}",encodeURIComponent(batch.join(",")));
+      return fetchJsonRetry(url,{headers,signal:ctl.signal});
+    }));
+    const n=payloads.reduce((sum,payload)=>sum+applyLive(payload),0);
     if(!n)throw new Error("Đọc được dữ liệu nhưng không thấy cột mã và giá. Cần danh sách có mã (symbol) và giá (price).");
     B.live=true;B.liveAt=new Date();simStop();
     B.ls.push({t:B.liveAt.toLocaleTimeString("vi-VN"),v:B.idx.v});if(B.ls.length>120)B.ls.shift();
-    srcStatus("Đã cập nhật "+n+" mã lúc "+B.liveAt.toLocaleTimeString("vi-VN")+".","ok");
+    srcStatus("Đã cập nhật "+n+" mã trong "+batches.length+" lô lúc "+B.liveAt.toLocaleTimeString("vi-VN")+".","ok");
     srcBadge();miniDraw();idxUpdate();boardRender();drawWatch();return true;
   }catch(e){
     const m=e.name==="AbortError"?"Hết thời gian chờ 10 giây.":e instanceof TypeError?"Trình duyệt chặn truy cập (CORS) hoặc sai địa chỉ. Hãy dùng Worker ở phần hướng dẫn bên dưới.":e.message;
     B.live=false;srcStatus(m,"err");srcBadge();return false;
   }finally{clearTimeout(to);}
+}
+async function loadFullUniverse(){
+  if(universePromise)return universePromise;
+  universePromise=(async()=>{
+    try{
+      const lists=await Promise.all(UNIVERSE_URLS.map(u=>fetchJsonRetry(u,{headers:{Accept:"application/json"}})));
+      const names=new Map();lists.forEach(j=>(j.data||[]).forEach(x=>{const t=String(x.code||"").toUpperCase().replace(/[^A-Z0-9]/g,"");if(t)names.set(t,x.fullname_vi||"");}));
+      B.symbols=[...names.keys()].sort();
+      B.rows.forEach(r=>{if(names.has(r.t)&&names.get(r.t))r.n=names.get(r.t);});
+      srcStatus("Đã nạp "+B.symbols.length+" mã HOSE/HNX/UPCOM. Đang lấy giá theo lô...","");
+      boardRender();
+      liveStart();
+    }catch(e){
+      srcStatus("Không nạp được danh sách toàn thị trường; đang dùng danh sách mặc định.","err");
+      liveStart();
+    }
+  })();
+  return universePromise;
 }
 function liveStart(){
   liveStop();if(!SRC.on||!SRC.url)return;
