@@ -354,8 +354,8 @@ Giá tính bằng nghìn đồng, biên độ HOSE ±7%. Chấm vàng cạnh mã
 <div class="card p-4"><h3 class="text-xs font-semibold text-rose-400 uppercase tracking-wider mb-2">Top giảm</h3><div id="bDn"></div></div>
 </div>
 <details id="srcBox" class="card p-4">
-<summary class="cursor-pointer text-sm font-semibold">Nguồn giá trực tuyến<span id="srcState" class="ml-2 text-[11px] font-normal text-slate-500">chưa kết nối</span></summary>
-<p class="text-xs text-slate-500 mt-2 mb-3">Nhập địa chỉ một nguồn trả về JSON danh sách mã và giá. Trang tự nhận các tên cột thường gặp (symbol, price, refPrice, volume) và tự đổi đồng sang nghìn đồng. Có thể dùng <span class="font-mono text-slate-300">{symbols}</span> trong địa chỉ để truyền danh sách mã.</p>
+<summary class="cursor-pointer text-sm font-semibold">Nguồn giá trực tuyến<span id="srcState" class="ml-2 text-[11px] font-normal text-slate-500">VPS miễn phí · chưa lấy dữ liệu</span></summary>
+<p class="text-xs text-slate-500 mt-2 mb-3">Mặc định app dùng bảng giá công khai VPS, không cần khoá: giá khớp, tham chiếu, trần/sàn, khối lượng và dư mua/bán. Trang tự nhận các tên cột thường gặp và dùng đơn vị nghìn đồng. Có thể dùng <span class="font-mono text-slate-300">{symbols}</span> trong địa chỉ để truyền danh sách mã. BCTC/ratios của app vẫn là dữ liệu mẫu, chưa được thay thế bằng số liệu thật.</p>
 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
 <label class="block text-xs text-slate-400">Địa chỉ nguồn (URL)<input id="srcUrl" type="url" inputmode="url" placeholder="https://…" class="mt-1 w-full bg-slate-800/80 border border-slate-700 rounded-xl py-2 px-3 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-slate-600"/></label>
 <label class="block text-xs text-slate-400">Khoá truy cập (nếu có)<input id="srcKey" type="password" autocomplete="off" class="mt-1 w-full bg-slate-800/80 border border-slate-700 rounded-xl py-2 px-3 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"/></label>
@@ -1073,7 +1073,9 @@ window.tab=function(id){_tab(id);const b=document.querySelector('.tab[data-t="'+
 })();
 
 /* ---------- Nguồn giá trực tuyến ---------- */
-const SRC={url:"",key:"",hdr:"Authorization",every:30,hours:true,on:false};
+// VPS public feed: real-time snapshot, free/no API key, CORS enabled.
+// Prices are in thousand VND, matching the board's display unit.
+const SRC={url:"https://bgapidatafeed.vps.com.vn/getliststockdata/{symbols}",key:"",hdr:"Authorization",every:30,hours:true,on:true};
 try{Object.assign(SRC,JSON.parse(localStorage.getItem("vsa.src")||"{}"));}catch(e){}
 function saveSrc(){try{localStorage.setItem("vsa.src",JSON.stringify(SRC));}catch(e){}}
 let liveT=null,srcWired=false;
