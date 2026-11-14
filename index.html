@@ -60,6 +60,33 @@ input[type=range]{accent-color:#6366f1}
 @keyframes sheetIn{from{transform:translateY(24px);opacity:0}}
 #installSheet .sheet{animation:sheetIn .25s ease-out}
 @media (prefers-reduced-motion:reduce){#menuPanel,#installSheet .sheet{animation:none}}
+body.bd main{padding:0}
+body.bd footer{display:none}
+body.bd #hdrSearch,body.bd #brand,body.bd #backBtn{display:none}
+body:not(.bd) #bdTitle{display:none}
+#toast{z-index:80}
+#v-board{max-width:34rem;margin:0 auto}
+.bst{position:sticky;top:var(--hh,52px);z-index:30;background:#020617}
+.brow{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1.25fr) minmax(0,.95fr) minmax(0,.9fr) minmax(0,.95fr) 30px;align-items:center;column-gap:6px;padding:0 2px 0 12px}
+.brow-r{min-height:58px;border-bottom:1px solid rgba(30,41,59,.75);cursor:pointer;transition:background .15s}
+.brow-r:active{background:rgba(30,41,59,.85)}
+.brow-r:focus-visible{outline:2px solid #6366f1;outline-offset:-2px}
+.bh{font-size:11.5px;font-weight:500;color:#94a3b8}
+.bh button{padding:0;white-space:nowrap}
+.mbtn{width:30px;height:44px;display:flex;align-items:center;justify-content:center;color:#94a3b8;border-radius:10px}
+.mbtn:active{background:rgba(51,65,85,.7)}
+.idxc{flex:none;min-width:9.4rem;background:rgba(30,41,59,.7);border-radius:12px;padding:8px 12px;cursor:pointer}
+.idxn{min-width:2.6rem;display:flex;align-items:center;justify-content:center;font-size:20px;color:#94a3b8}
+.btab{flex:1;padding:11px 4px;color:#94a3b8;border-bottom:2px solid transparent;transition:color .2s,border-color .2s}
+.btab-on{color:#a5b4fc;border-bottom-color:#6366f1}
+.ibtn{width:40px;height:38px;flex:none;display:flex;align-items:center;justify-content:center;border-radius:12px;background:rgba(51,65,85,.7);color:#cbd5e1;transition:background .15s,transform .15s}
+.ibtn:active{transform:scale(.94)}
+.ibtn-on{background:#4f46e5;color:#fff}
+.chip{flex:none;padding:6px 12px;border-radius:999px;font-size:12px;font-weight:500;background:rgba(51,65,85,.55);color:#cbd5e1;white-space:nowrap}
+.chip-on{background:#4f46e5;color:#fff}
+.rsb{display:block;width:100%;text-align:center;padding:13px;border-radius:14px;background:rgba(51,65,85,.55);font-weight:600;font-size:14px;margin-top:8px}
+.rsb-main{background:#4f46e5;color:#fff}
+#rowSheet .sheet{animation:sheetIn .25s ease-out}
 </style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen antialiased">
@@ -78,9 +105,12 @@ input[type=range]{accent-color:#6366f1}
 <header class="sticky top-0 z-40 bg-slate-900/95 backdrop-blur-xl border-b border-slate-800/80">
 <div class="max-w-7xl mx-auto px-3 sm:px-5 flex items-center justify-between h-13 gap-2 py-2.5">
 <div class="flex items-center gap-2">
-<div class="relative" id="menuWrap"><button type="button" id="menuBtn" aria-haspopup="menu" aria-expanded="false" aria-controls="menuPanel" aria-label="Mở menu" class="flex items-center gap-1 rounded-xl p-0.5 pr-1.5 hover:bg-slate-800 active:scale-95 transition"><svg class="w-8 h-8 rounded-lg shadow-lg shrink-0" aria-hidden="true"><use href="#logo"/></svg><svg id="menuChev" class="w-3.5 h-3.5 text-slate-400 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg></button><div id="menuPanel" role="menu" aria-label="Chức năng chính" class="hidden absolute left-0 top-full mt-2 w-[17rem] max-w-[calc(100vw-1.5rem)] rounded-2xl bg-slate-900 border border-slate-700/80 shadow-2xl shadow-black/50 p-1.5 z-50"><button type="button" role="menuitem" class="mi mi-on" data-v="analyze"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg><span><b>Phân tích cổ phiếu</b><small>Sức khỏe, định giá, rủi ro</small></span></button><button type="button" role="menuitem" class="mi" data-v="board"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/></svg><span><b>Bảng giá VN-Index</b><small>Chỉ số, 30 mã, bản đồ nhiệt</small></span></button><button type="button" role="menuitem" class="mi" data-v="sector"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm10 0a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zm10 0a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"/></svg><span><b>Sức mạnh ngành</b><small>Xếp hạng ngành và doanh nghiệp</small></span></button><button type="button" role="menuitem" class="mi" data-v="data"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 7c0-1.1 3.6-2 8-2s8 .9 8 2-3.6 2-8 2-8-.9-8-2zm0 0v10c0 1.1 3.6 2 8 2s8-.9 8-2V7M4 12c0 1.1 3.6 2 8 2s8-.9 8-2"/></svg><span><b>Nhập dữ liệu</b><small>Thêm mã bằng số liệu thật</small></span></button><div class="my-1.5 border-t border-slate-800"></div><button type="button" role="menuitem" id="menuInstall" class="mi"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 3v12m0 0l-4-4m4 4l4-4M5 17v2a2 2 0 002 2h10a2 2 0 002-2v-2"/></svg><span class="flex-1"><b>Cài app ra màn hình</b><small>Mở nhanh như app trên điện thoại</small></span><span id="installDot" class="hidden w-2 h-2 rounded-full bg-emerald-400 shrink-0" title="Sẵn sàng cài"></span></button></div></div>
-<div class="hidden sm:block"><h1 class="text-sm font-bold leading-tight">VN Stock Analyst</h1><p class="text-[10px] text-slate-500">Pro · Phân tích chuyên sâu</p></div>
+<button type="button" id="backBtn" class="ibtn !w-9 !h-9" aria-label="Quay lại"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" d="M15 19l-7-7 7-7"/></svg></button>
+<div class="relative" id="menuWrap"><button type="button" id="menuBtn" aria-haspopup="menu" aria-expanded="false" aria-controls="menuPanel" aria-label="Mở menu" class="flex items-center gap-1 rounded-xl p-0.5 pr-1.5 hover:bg-slate-800 active:scale-95 transition"><svg class="w-8 h-8 rounded-lg shadow-lg shrink-0" aria-hidden="true"><use href="#logo"/></svg><svg id="menuChev" class="w-3.5 h-3.5 text-slate-400 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg></button><div id="menuPanel" role="menu" aria-label="Chức năng chính" class="hidden absolute left-0 top-full mt-2 w-[17rem] max-w-[calc(100vw-1.5rem)] rounded-2xl bg-slate-900 border border-slate-700/80 shadow-2xl shadow-black/50 p-1.5 z-50"><button type="button" role="menuitem" class="mi mi-on" data-v="board"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/></svg><span><b>Bảng giá</b><small>Trang chính: chỉ số và giá các mã</small></span></button><button type="button" role="menuitem" class="mi" data-v="analyze"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg><span><b>Phân tích cổ phiếu</b><small>Mở mã đã xem gần nhất</small></span></button><button type="button" role="menuitem" class="mi" data-v="sector"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm10 0a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zm10 0a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"/></svg><span><b>Sức mạnh ngành</b><small>Xếp hạng ngành và doanh nghiệp</small></span></button><button type="button" role="menuitem" class="mi" data-v="data"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 7c0-1.1 3.6-2 8-2s8 .9 8 2-3.6 2-8 2-8-.9-8-2zm0 0v10c0 1.1 3.6 2 8 2s8-.9 8-2V7M4 12c0 1.1 3.6 2 8 2s8-.9 8-2"/></svg><span><b>Nhập dữ liệu</b><small>Thêm mã bằng số liệu thật</small></span></button><div class="my-1.5 border-t border-slate-800"></div><button type="button" role="menuitem" id="menuInstall" class="mi"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 3v12m0 0l-4-4m4 4l4-4M5 17v2a2 2 0 002 2h10a2 2 0 002-2v-2"/></svg><span class="flex-1"><b>Cài app ra màn hình</b><small>Mở nhanh như app trên điện thoại</small></span><span id="installDot" class="hidden w-2 h-2 rounded-full bg-emerald-400 shrink-0" title="Sẵn sàng cài"></span></button></div></div>
+<div id="bdTitle" class="flex items-center gap-2"><h1 class="text-base font-bold leading-tight">Bảng giá</h1><span id="bdBadge" class="px-2 py-0.5 bg-amber-500/15 text-amber-300 text-[10px] font-semibold rounded-md">Dữ liệu mẫu</span></div>
+<div id="brand" class="hidden sm:block"><h1 class="text-sm font-bold leading-tight">VN Stock Analyst</h1><p class="text-[10px] text-slate-500">Pro · Phân tích chuyên sâu</p></div>
 </div>
+<div id="hdrSearch" class="flex items-center gap-2 flex-1 min-w-0 justify-end">
 <div class="flex-1 max-w-[180px] sm:max-w-xs relative">
 <input id="tickerInput" type="text" placeholder="Mã CK..." class="w-full bg-slate-800/80 border border-slate-700 rounded-xl py-1.5 pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-slate-500" autocomplete="off" list="tkList" enterkeyhint="search"/>
 <datalist id="tkList"></datalist>
@@ -89,7 +119,7 @@ input[type=range]{accent-color:#6366f1}
 <button id="analyzeBtn" class="bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white font-medium px-3 py-1.5 rounded-xl text-sm transition shadow-lg shadow-indigo-600/20 flex items-center gap-1.5">
 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5h6m-3-2v4"/></svg>
 <span class="hidden sm:inline">Phân tích</span>
-</button>
+</button></div>
 <button id="installAppBtn" type="button" class="bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-medium px-3 py-1.5 rounded-xl text-sm transition shadow-lg shadow-emerald-600/20 flex items-center gap-1.5" aria-label="Cài VN Stock ra màn hình chính">
 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v12m0 0l-4-4m4 4l4-4M5 17v2a2 2 0 002 2h10a2 2 0 002-2v-2"/></svg>
 <span class="hidden sm:inline">Cài app</span>
@@ -102,21 +132,7 @@ input[type=range]{accent-color:#6366f1}
 <div id="v-analyze">
 <div id="loadingState" class="hidden"><div class="flex flex-col items-center justify-center py-24 gap-3"><div class="w-12 h-12 border-[3px] border-indigo-500/25 border-t-indigo-500 rounded-full animate-spin"></div><p class="text-slate-400 text-sm">Đang tính toán chỉ số & mô hình định giá...</p></div></div>
 
-<div id="emptyState" class="py-10">
-<div class="text-center mb-8">
-<div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-600/20 to-teal-500/20 border border-indigo-500/20 mb-4"><svg class="w-7 h-7 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg></div>
-<h2 class="text-2xl font-bold mb-1.5">Phân tích cổ phiếu chuyên sâu</h2>
-<p class="text-slate-400 text-sm max-w-lg mx-auto">Sức khỏe TC · Định giá đa mô hình · DuPont · Peer · Cảnh báo rủi ro · 25+ chỉ số</p>
-</div>
-<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 max-w-3xl mx-auto">
-<button onclick="qa('VNM')" class="card p-3.5 text-left hover:scale-[1.02] active:scale-[0.98] transition"><div class="w-9 h-9 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold text-xs mb-2">VN</div><div class="font-semibold text-sm">VNM</div><div class="text-[11px] text-slate-500">Vinamilk</div></button>
-<button onclick="qa('FPT')" class="card p-3.5 text-left hover:scale-[1.02] active:scale-[0.98] transition"><div class="w-9 h-9 rounded-lg bg-orange-500/20 text-orange-400 flex items-center justify-center font-bold text-xs mb-2">FP</div><div class="font-semibold text-sm">FPT</div><div class="text-[11px] text-slate-500">FPT Corp</div></button>
-<button onclick="qa('HPG')" class="card p-3.5 text-left hover:scale-[1.02] active:scale-[0.98] transition"><div class="w-9 h-9 rounded-lg bg-rose-500/20 text-rose-400 flex items-center justify-center font-bold text-xs mb-2">HP</div><div class="font-semibold text-sm">HPG</div><div class="text-[11px] text-slate-500">Hòa Phát</div></button>
-<button onclick="qa('VCB')" class="card p-3.5 text-left hover:scale-[1.02] active:scale-[0.98] transition"><div class="w-9 h-9 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-xs mb-2">VC</div><div class="font-semibold text-sm">VCB</div><div class="text-[11px] text-slate-500">Vietcombank</div></button>
-<button onclick="qa('MWG')" class="card p-3.5 text-left hover:scale-[1.02] active:scale-[0.98] transition col-span-2 sm:col-span-1"><div class="w-9 h-9 rounded-lg bg-violet-500/20 text-violet-400 flex items-center justify-center font-bold text-xs mb-2">MW</div><div class="font-semibold text-sm">MWG</div><div class="text-[11px] text-slate-500">TGDD</div></button>
-</div>
-<div id="wlBox" class="max-w-3xl mx-auto mt-6"><h3 class="text-xs font-semibold text-amber-300 uppercase tracking-wider mb-2">★ Danh sách theo dõi</h3><div id="wlList" class="flex flex-wrap gap-2"></div></div>
-</div>
+<div id="emptyState" class="hidden"></div>
 
 <!-- DASHBOARD -->
 <div id="dashboard" class="hidden space-y-4">
@@ -124,7 +140,7 @@ input[type=range]{accent-color:#6366f1}
 <div class="card p-4 sm:p-5 fi">
 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
 <div class="flex items-start gap-3">
-<div id="logo" class="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-600 to-teal-500 flex items-center justify-center text-lg font-bold shadow-lg shrink-0"></div>
+<div id="tkLogo" class="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-600 to-teal-500 flex items-center justify-center text-lg font-bold shadow-lg shrink-0"></div>
 <div>
 <div class="flex items-center gap-2 flex-wrap"><h2 id="cname" class="text-lg font-bold"></h2><span id="cticker" class="px-2 py-0.5 bg-indigo-500/15 text-indigo-300 text-xs font-semibold rounded-md"></span><span id="grade" class="px-2 py-0.5 text-xs font-bold rounded-md"></span><button id="wStar" class="w-7 h-7 rounded-lg text-xl leading-none text-slate-500 hover:text-amber-300 transition" aria-label="Theo dõi mã này" title="Theo dõi">☆</button></div>
 <p id="csector" class="text-slate-400 text-xs mt-0.5"></p>
@@ -147,6 +163,7 @@ input[type=range]{accent-color:#6366f1}
 <div class="card p-4"><h3 class="text-xs font-semibold text-rose-400 uppercase tracking-wider mb-2.5">! Rủi ro / Cảnh báo</h3><ul id="risks" class="space-y-1.5 text-sm"></ul></div>
 </div>
 
+<div id="aiCard"></div>
 <!-- Tabs -->
 <div id="dTabs" class="flex gap-1 overflow-x-auto py-2 -mx-1 px-1 fi sticky top-[57px] z-30 bg-slate-950/90 backdrop-blur">
 <button class="tab tab-on px-3 py-1.5 rounded-lg text-xs font-medium transition whitespace-nowrap" data-t="ov">Tổng quan</button>
@@ -267,8 +284,58 @@ input[type=range]{accent-color:#6366f1}
 </div>
 </div>
 
-<!-- BẢNG GIÁ VN-INDEX -->
-<div id="v-board" class="hidden space-y-4">
+<!-- BẢNG GIÁ (trang chính) -->
+<div id="v-board">
+<div id="bStrip" role="button" tabindex="0" aria-label="Mở chi tiết thị trường" class="flex gap-2 overflow-x-auto px-3 py-3"></div>
+<div class="bst">
+<div class="flex border-b border-slate-800 text-[13.5px] font-semibold" id="bTabs">
+<button type="button" class="btab" data-f="w">Cá nhân</button>
+<button type="button" class="btab btab-on" data-f="all">Tất cả</button>
+<button type="button" class="btab" data-f="a">Có phân tích</button>
+</div>
+<div class="flex items-center gap-2 px-3 py-2">
+<label class="relative flex-1 min-w-0"><span class="sr-only">Sắp xếp</span>
+<select id="bSort" class="w-full appearance-none bg-slate-800/80 border border-slate-700/80 rounded-xl py-2 pl-3 pr-8 text-[13.5px] text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+<option value="t:1">Mã A → Z</option><option value="pct:-1">Tăng nhiều nhất</option><option value="pct:1">Giảm nhiều nhất</option><option value="vol:-1">Khối lượng cao nhất</option><option value="px:-1">Giá cao nhất</option><option value="x" hidden>Tuỳ chỉnh</option>
+</select>
+<svg class="w-4 h-4 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg></label>
+<button type="button" id="bAddBtn" class="ibtn" aria-label="Thêm mã vào theo dõi"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-width="2.2" d="M12 5v14M5 12h14"/></svg></button>
+<button type="button" id="bSrchBtn" class="ibtn" aria-label="Tìm mã"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg></button>
+<button type="button" id="bFltBtn" class="ibtn" aria-label="Lọc theo trạng thái giá"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h18l-7 8v6l-4-2v-4L3 5z"/></svg></button>
+</div>
+<div id="bAddRow" class="hidden px-3 pb-2 gap-2"><label class="flex-1 min-w-0"><span class="sr-only">Mã cần theo dõi</span><input id="bAdd" type="text" placeholder="Nhập mã để theo dõi, ví dụ FPT" autocomplete="off" autocapitalize="characters" class="w-full bg-slate-800/80 border border-slate-700 rounded-xl py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-slate-500"/></label><button type="button" id="bAddGo" class="bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white text-sm font-medium px-4 rounded-xl">Thêm</button></div>
+<div id="bSrchRow" class="hidden px-3 pb-2"><label class="block"><span class="sr-only">Lọc theo mã</span><input id="bSearch" type="text" placeholder="Lọc theo mã..." autocomplete="off" autocapitalize="characters" class="w-full bg-slate-800/80 border border-slate-700 rounded-xl py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-slate-500"/></label></div>
+<div id="bFltRow" class="hidden px-3 pb-2 gap-1.5 overflow-x-auto">
+<button type="button" class="chip chip-on" data-s="">Tất cả</button><button type="button" class="chip" data-s="c"><i class="text-fuchsia-400 not-italic">●</i> Trần</button><button type="button" class="chip" data-s="u"><i class="text-emerald-400 not-italic">●</i> Tăng</button><button type="button" class="chip" data-s="r"><i class="text-amber-300 not-italic">●</i> Tham chiếu</button><button type="button" class="chip" data-s="d"><i class="text-rose-400 not-italic">●</i> Giảm</button><button type="button" class="chip" data-s="f"><i class="text-cyan-300 not-italic">●</i> Sàn</button>
+</div>
+<div class="brow bh border-y border-slate-800/90 h-9">
+<button type="button" data-sk="t" class="text-left">Mã<i class="not-italic"></i></button>
+<span class="text-center">Giá</span>
+<button type="button" data-sk="px" class="text-right">Thị giá<i class="not-italic"></i></button>
+<button type="button" data-sk="chg" class="text-right">+/-<i class="not-italic"></i></button>
+<button type="button" data-sk="vol" class="text-right">T.KL<i class="not-italic"></i></button>
+<span></span>
+</div>
+</div>
+<div id="bBody"></div>
+<div class="px-4 pt-3 pb-8 text-[11px] leading-relaxed text-slate-500">
+<div class="flex flex-wrap gap-x-4 gap-y-1 mb-1.5"><span><span class="text-fuchsia-400">●</span> Trần</span><span><span class="text-emerald-400">●</span> Tăng</span><span><span class="text-amber-300">●</span> Tham chiếu</span><span><span class="text-rose-400">●</span> Giảm</span><span><span class="text-cyan-300">●</span> Sàn</span></div>
+Giá tính bằng nghìn đồng, biên độ HOSE ±7%. Chấm vàng cạnh mã là mã đang theo dõi. Đường nhỏ ở cột Giá chỉ để minh họa xu hướng trong ngày, không phải dữ liệu từng phút (trừ khi đã kết nối giá trực tuyến). Bấm một mã để xem phân tích, bấm ⋮ để thêm vào theo dõi.
+</div>
+</div>
+
+<div id="v-sector" class="hidden space-y-4"></div>
+<div id="v-data" class="hidden space-y-4"></div>
+</main>
+<footer class="border-t border-slate-800/60 mt-8 py-5"><div class="max-w-7xl mx-auto px-4 text-center text-[11px] text-slate-600">VN Stock Analyst Pro · Dữ liệu mẫu minh họa · Không phải khuyến nghị đầu tư</div></footer>
+
+<div id="mktSheet" class="hidden fixed inset-0 z-[55] bg-slate-950 overflow-y-auto overscroll-contain" role="dialog" aria-modal="true" aria-label="Thị trường">
+<div class="sticky top-0 z-10 bg-slate-900/95 backdrop-blur border-b border-slate-800 flex items-center gap-2 px-3 py-2.5" style="padding-top:max(.625rem,env(safe-area-inset-top,0px))">
+<button type="button" class="ibtn" data-close-mkt aria-label="Đóng"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" d="M15 19l-7-7 7-7"/></svg></button>
+<h2 class="font-bold text-base flex-1">Thị trường</h2>
+<button id="bSim" type="button" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-700"><span>Mô phỏng nhịp giá</span></button>
+</div>
+<div class="max-w-3xl mx-auto px-3 py-4 space-y-4" style="padding-bottom:max(2rem,env(safe-area-inset-bottom,0px))">
 <div class="card p-4 sm:p-5 fi">
 <div class="flex flex-wrap items-start justify-between gap-4">
 <div>
@@ -284,40 +351,6 @@ input[type=range]{accent-color:#6366f1}
 <div class="card p-4"><h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Độ rộng thị trường</h3><div id="bBreadth"></div></div>
 <div class="card p-4"><h3 class="text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-2">Top tăng</h3><div id="bUp"></div></div>
 <div class="card p-4"><h3 class="text-xs font-semibold text-rose-400 uppercase tracking-wider mb-2">Top giảm</h3><div id="bDn"></div></div>
-</div>
-<div class="card p-4">
-<div class="flex flex-wrap items-center gap-2 mb-3">
-<div class="flex gap-1">
-<button class="px-3 py-1.5 rounded-lg text-xs font-medium transition tab-on" data-mode="table">Bảng giá</button>
-<button class="px-3 py-1.5 rounded-lg text-xs font-medium transition text-slate-400 hover:text-white hover:bg-slate-800" data-mode="heat">Bản đồ nhiệt</button>
-</div>
-<div class="flex gap-1 overflow-x-auto">
-<button class="px-2.5 py-1.5 rounded-lg text-xs font-medium transition whitespace-nowrap tab-on" data-f="all">Tất cả</button>
-<button class="px-2.5 py-1.5 rounded-lg text-xs font-medium transition whitespace-nowrap text-slate-400 hover:text-white hover:bg-slate-800" data-f="u">Tăng</button>
-<button class="px-2.5 py-1.5 rounded-lg text-xs font-medium transition whitespace-nowrap text-slate-400 hover:text-white hover:bg-slate-800" data-f="r">Tham chiếu</button>
-<button class="px-2.5 py-1.5 rounded-lg text-xs font-medium transition whitespace-nowrap text-slate-400 hover:text-white hover:bg-slate-800" data-f="d">Giảm</button>
-<button class="px-2.5 py-1.5 rounded-lg text-xs font-medium transition whitespace-nowrap text-slate-400 hover:text-white hover:bg-slate-800" data-f="w">★ Theo dõi</button>
-</div>
-<label for="bSearch" class="sr-only">Lọc theo mã</label>
-<input id="bSearch" type="text" placeholder="Lọc mã..." autocomplete="off" class="w-28 bg-slate-800/80 border border-slate-700 rounded-xl py-1.5 px-3 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-slate-500"/>
-<button id="bSim" class="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-700"><span>Mô phỏng nhịp giá</span></button>
-</div>
-<div id="bTableWrap" class="overflow-x-auto">
-<table class="w-full text-sm min-w-[600px]"><thead><tr class="text-slate-500 border-b border-slate-700/80 text-xs">
-<th class="text-left py-2 sticky left-0 z-10 bg-[#1b2537]" data-sk="t">Mã<i class="not-italic"></i></th>
-<th class="text-right py-2" data-sk="ref"><span class="text-amber-300/80">TC</span><i class="not-italic"></i></th>
-<th class="text-right py-2 text-fuchsia-400/80">Trần</th>
-<th class="text-right py-2 text-cyan-300/80">Sàn</th>
-<th class="text-right py-2" data-sk="px">Giá<i class="not-italic"></i></th>
-<th class="text-right py-2" data-sk="chg">+/-<i class="not-italic"></i></th>
-<th class="text-right py-2" data-sk="pct">%<i class="not-italic"></i></th>
-<th class="text-right py-2" data-sk="vol">KL (nghìn cp)<i class="not-italic"></i></th>
-</tr></thead><tbody id="bBody" class="divide-y divide-slate-800/60"></tbody></table>
-</div>
-<div id="bHeat" class="hidden grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-6 gap-2"></div>
-<div class="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-[11px] text-slate-500">
-<span><span class="text-fuchsia-400">●</span> Trần</span><span><span class="text-emerald-400">●</span> Tăng</span><span><span class="text-amber-300">●</span> Tham chiếu</span><span><span class="text-rose-400">●</span> Giảm</span><span><span class="text-cyan-300">●</span> Sàn</span><span>Giá tính bằng nghìn đồng, biên độ HOSE ±7%</span>
-</div>
 </div>
 <details id="srcBox" class="card p-4">
 <summary class="cursor-pointer text-sm font-semibold">Nguồn giá trực tuyến<span id="srcState" class="ml-2 text-[11px] font-normal text-slate-500">chưa kết nối</span></summary>
@@ -346,12 +379,12 @@ input[type=range]{accent-color:#6366f1}
 <div id="bMsg" class="text-xs mt-2 min-h-[1.25rem]"></div>
 </details>
 </div>
-
-<div id="v-sector" class="hidden space-y-4"></div>
-<div id="v-data" class="hidden space-y-4"></div>
-</main>
-<footer class="border-t border-slate-800/60 mt-8 py-5"><div class="max-w-7xl mx-auto px-4 text-center text-[11px] text-slate-600">VN Stock Analyst Pro · Dữ liệu mẫu minh họa · Không phải khuyến nghị đầu tư</div></footer>
-
+</div>
+<div id="rowSheet" class="hidden fixed inset-0 z-[60]" role="dialog" aria-modal="true" aria-label="Tuỳ chọn mã">
+<div class="absolute inset-0 bg-black/60" data-close-row></div>
+<div class="sheet absolute bottom-0 inset-x-0 mx-auto max-w-lg max-h-[88vh] overflow-y-auto bg-slate-900 border-t border-slate-700/80 rounded-t-3xl p-4 shadow-2xl" style="padding-bottom:max(1rem,env(safe-area-inset-bottom,0px))">
+<div id="rsBody"></div>
+</div></div>
 <div id="installSheet" class="hidden fixed inset-0 z-[60]" role="dialog" aria-modal="true" aria-labelledby="isTitle">
 <div class="absolute inset-0 bg-black/60" data-close-sheet></div>
 <div class="sheet absolute bottom-0 inset-x-0 sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:w-[26rem] bg-slate-900 border border-slate-700/80 rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl" style="padding-bottom:max(1.25rem,env(safe-area-inset-bottom,0px))">
@@ -446,7 +479,7 @@ document.getElementById("dismissInstall")?.addEventListener("click",()=>document
 function render(tk){
 showView("analyze",{keepScroll:1});
 const d=DB[tk.toUpperCase()];if(!d){toast("Mã "+tk.toUpperCase()+" chưa có báo cáo tài chính. Có sẵn: "+Object.keys(DB).join(" ")+". Thêm mã ở tab Nhập dữ liệu.");return;}
-document.getElementById("emptyState").classList.add("hidden");
+document.getElementById("emptyState").classList.add("hidden");try{localStorage.setItem("vsa.last",tk.toUpperCase());}catch(e){}
 document.getElementById("loadingState").classList.remove("hidden");
 document.getElementById("dashboard").classList.add("hidden");
 setTimeout(()=>{
@@ -454,7 +487,7 @@ document.getElementById("loadingState").classList.add("hidden");
 document.getElementById("dashboard").classList.remove("hidden");
 dc();
 const r=d.r,sa=d.sa;
-document.getElementById("logo").textContent=d.t.slice(0,2);
+document.getElementById("tkLogo").textContent=d.t.slice(0,2);
 document.getElementById("cname").textContent=d.name;
 document.getElementById("cticker").textContent=d.t;
 document.getElementById("csector").textContent=d.sec;
@@ -510,7 +543,7 @@ document.getElementById("fAvg").textContent=fp(fa);
 const ue=document.getElementById("ups");ue.textContent=(up2>=0?"+":"")+up2+"%";ue.className="font-semibold "+(up2>=0?"text-emerald-400":"text-rose-400");
 if(d.fcf){const tv=d.fcf*1.05/.06;document.getElementById("fcf").textContent=fmt(d.fcf)+" tỷ";document.getElementById("tv").textContent=(tv/1000).toFixed(1)+" nghìn tỷ";document.getElementById("dcf").textContent=fp(Math.round(tv/d.sh*1000));}
 else{document.getElementById("fcf").textContent="—";document.getElementById("tv").textContent="—";document.getElementById("dcf").textContent="—";}
-sens(d);peers(d);risk(d);charts(d);tab("ov");tuneInit(d);
+sens(d);peers(d);risk(d);charts(d);tab("ov");tuneInit(d);aiDraw(d.t);
 },500);
 }
 
@@ -572,19 +605,39 @@ function toast(t){const e=$("toast");e.textContent=t;e.classList.remove("opacity
 
 /* ---------- Điều hướng ---------- */
 const VIEWS=["analyze","board","sector","data"];
+let curV=null;
+function hdrH(){const h=document.querySelector("header");if(h)document.documentElement.style.setProperty("--hh",h.offsetHeight+"px");}
+window.addEventListener("resize",hdrH);window.addEventListener("load",hdrH);
+function closeOver(){mktClose();rsClose();}
 function showView(v,opt){
-  if(!VIEWS.includes(v))v="analyze";
+  opt=opt||{};
+  if(!VIEWS.includes(v))v="board";
+  if(curV==="board")B.sy=window.scrollY;
+  closeOver();curV=v;
   VIEWS.forEach(k=>{const el=$("v-"+k),on=k===v;el.classList.toggle("hidden",!on);if(on){el.classList.remove("vfade");void el.offsetWidth;el.classList.add("vfade");}});
+  document.body.classList.toggle("bd",v==="board");
   document.querySelectorAll("#menuPanel [data-v]").forEach(b=>{const on=b.dataset.v===v;b.classList.toggle("mi-on",on);b.setAttribute("aria-current",on?"page":"false");});
   if(v!=="board"){simStop();liveStop();}
   if(v==="board")boardShow();
   if(v==="sector")sectorRender();
   if(v==="data")dataRender();
-  try{history.replaceState(null,"","#"+v);localStorage.setItem("vsa.view",v);}catch(e){}
-  if(!(opt&&opt.keepScroll))window.scrollTo({top:0});
+  try{history.replaceState(history.state,"","#"+v);}catch(e){}
+  hdrH();
+  if(!opt.keepScroll)window.scrollTo({top:v==="board"?(B.sy||0):0});
 }
-document.querySelectorAll("#menuPanel [data-v]").forEach(b=>b.addEventListener("click",()=>showView(b.dataset.v)));
-window.addEventListener("hashchange",()=>{const h=location.hash.slice(1);if(VIEWS.includes(h))showView(h);});
+function lastTicker(){let t=null;try{t=localStorage.getItem("vsa.last");}catch(e){}return t&&DB[t]?t:null;}
+function pushAn(){if(curV!=="analyze"){try{history.pushState({p:1},"","#analyze");}catch(e){}}}
+function menuGo(v){
+  if(v==="analyze"){const t=lastTicker();if(t){pushAn();qa(t);window.scrollTo({top:0});}else{showView("board");toast("Bấm vào một mã trong bảng giá để xem phân tích");}return;}
+  showView(v);
+}
+document.querySelectorAll("#menuPanel [data-v]").forEach(b=>b.addEventListener("click",()=>menuGo(b.dataset.v)));
+$("backBtn").addEventListener("click",()=>{if(history.state&&history.state.p)history.back();else showView("board");});
+window.addEventListener("hashchange",()=>{
+  const h=location.hash.slice(1);if(!VIEWS.includes(h)||h===curV)return;
+  const loaded=!$("dashboard").classList.contains("hidden")||!$("loadingState").classList.contains("hidden");
+  showView(h==="analyze"&&!loaded?"board":h);
+});
 
 /* ---------- Bảng giá VN-Index ---------- */
 /* Dữ liệu mẫu (nghìn đồng). Để dùng giá thật: dán ở mục "Cập nhật giá" hoặc gọi applyQuotes() từ API của ông. */
@@ -600,7 +653,7 @@ const mb32=a=>()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.
 const hs=s=>{let h=2166136261;for(const c of s){h^=c.charCodeAt(0);h=Math.imul(h,16777619);}return h>>>0;};
 const stOf=r=>r.px>=ceilP(r.ref)-1e-9?"c":r.px<=floorP(r.ref)+1e-9?"f":r.px>r.ref+1e-9?"u":r.px<r.ref-1e-9?"d":"r";
 const STC={c:"text-fuchsia-400",u:"text-emerald-400",r:"text-amber-300",d:"text-rose-400",f:"text-cyan-300"};
-const B={inited:false,rows:[],idx:{v:1642.35,ref:1636.9},mode:"table",f:"all",q:"",sk:"pct",sd:-1,sim:false,series:null,ls:[],labels:[],live:false,liveAt:null,mini:{vn30:{v:1815.4,ref:1809.2},hnx:{v:268.7,ref:269.4},upcom:{v:121.9,ref:121.5}}};
+const B={inited:false,rows:[],idx:{v:1642.35,ref:1636.9},mode:"table",f:"all",q:"",sk:"t",sd:1,s:"",sy:0,sim:false,series:null,ls:[],labels:[],live:false,liveAt:null,mini:{vn30:{v:1815.4,ref:1809.2},hnx:{v:268.7,ref:269.4},upcom:{v:121.9,ref:121.5}}};
 let BCH=null,simT=null;
 
 function seedRows(){
@@ -631,6 +684,7 @@ function idxPoints(){
   return B.series.map((x,i)=>q2(ref+(cur-ref)*i/(n-1)+x*1.4));
 }
 function idxUpdate(){
+  stripDraw();
   const d=B.idx.v-B.idx.ref,p=d/B.idx.ref*100,up=d>=0;
   $("bxVal").textContent=nv(B.idx.v,2);
   const c=$("bxChg");c.textContent=(up?"▲ ":"▼ ")+sgn(d)+" ("+(p>0?"+":"")+nv(p,2)+"%)";c.className="text-sm font-semibold stat pb-1 "+(d===0?"text-amber-300":up?"text-emerald-400":"text-rose-400");
@@ -657,6 +711,28 @@ function idxChart(){
 }
 function miniIdx(n,v,ref){const d=v-ref,p=d/ref*100;return'<div class="bg-slate-900/60 rounded-xl p-2.5"><div class="text-[10px] text-slate-500">'+n+'</div><div class="text-sm font-bold stat">'+nv(v,2)+'</div><div class="text-[11px] font-medium stat '+(d>=0?"text-emerald-400":"text-rose-400")+'">'+(p>0?"+":"")+nv(p,2)+'%</div></div>';}
 
+const hp=(r,o,n)=>{if(!r.hs)r.hs=[o];r.hs.push(n);if(r.hs.length>60)r.hs.shift();};
+function spark(r,c){
+  let pts;const W=100,H=32,real=r.hs&&r.hs.length>=3;
+  if(real)pts=r.hs.slice();
+  else{
+    const R=mb32(hs(r.t+"~"+r.ref)),n=28,w=[0];let v=0;for(let i=1;i<n;i++){v+=(R()-.5)*2;w.push(v);}
+    const end=w[n-1],d=r.px-r.ref,amp=Math.max(Math.abs(d)*.55,r.ref*.004)/2.2;
+    pts=w.map((x,i)=>{const t=i/(n-1),s=t*t*(3-2*t);return r.ref+d*s+(x-end*t)*amp;});
+  }
+  let lo=Math.min(r.ref,...pts),hi=Math.max(r.ref,...pts);if(hi-lo<1e-9){lo-=.01;hi+=.01;}
+  const X=i=>(i/(pts.length-1)*W).toFixed(1),Y=v=>(H-2-(v-lo)/(hi-lo)*(H-4)).toFixed(1);
+  return'<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" class="w-full h-8 '+c+'" aria-hidden="true"><line x1="0" x2="'+W+'" y1="'+Y(r.ref)+'" y2="'+Y(r.ref)+'" stroke="#64748b" stroke-width="1" stroke-dasharray="1.5 2.5" vector-effect="non-scaling-stroke"/><polyline fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke" points="'+pts.map((v,i)=>X(i)+","+Y(v)).join(" ")+'"/></svg>';
+}
+const fvol=v=>v>=1000?nv(v/1000,1)+" M":nv(v,1)+" K";
+function stripDraw(){
+  const el=$("bStrip");if(!el)return;
+  const items=[["VNI",B.idx],["VN30",B.mini.vn30],["HNX",B.mini.hnx],["UPCOM",B.mini.upcom]];
+  el.innerHTML=items.map(([n,o])=>{
+    const d=o.v-o.ref,p=d/o.ref*100,c=d>0?"text-emerald-400":d<0?"text-rose-400":"text-amber-300";
+    return'<div class="idxc"><div class="text-[13px] whitespace-nowrap"><span class="font-semibold text-slate-200">'+n+'</span> <span class="stat font-semibold '+c+'">'+nv(o.v,2)+'</span></div><div class="text-[12px] stat whitespace-nowrap '+c+'">'+(d>0?"▲":d<0?"▼":"■")+" "+nv(Math.abs(d),2)+" | "+nv(Math.abs(p),2)+"%</div></div>";
+  }).join("")+'<div class="idxc idxn" aria-hidden="true">›</div>';
+}
 function boardSide(){
   const R=B.rows,cnt={c:0,u:0,r:0,d:0,f:0};R.forEach(r=>cnt[stOf(r)]++);
   const up=cnt.c+cnt.u,dn=cnt.d+cnt.f,tot=R.length||1;
@@ -667,35 +743,37 @@ function boardSide(){
    '<div class="grid grid-cols-5 text-center text-[11px] gap-1">'+[["c","Trần","text-fuchsia-400"],["u","Tăng","text-emerald-400"],["r","TC","text-amber-300"],["d","Giảm","text-rose-400"],["f","Sàn","text-cyan-300"]].map(([k,l,c])=>'<div><div class="text-base font-bold stat '+c+'">'+cnt[k]+'</div><div class="text-slate-500">'+l+'</div></div>').join("")+'</div>'+
    '<div class="grid grid-cols-2 gap-2 mt-3 text-center"><div class="bg-slate-900/60 rounded-xl p-2"><div class="text-[10px] text-slate-500">KL (mẫu)</div><div class="text-sm font-bold stat">'+nv(vol/1000,1)+' tr cp</div></div><div class="bg-slate-900/60 rounded-xl p-2"><div class="text-[10px] text-slate-500">GT (mẫu)</div><div class="text-sm font-bold stat">'+nv(val,0)+' tỷ</div></div></div>'+
    '<p class="text-[10px] text-slate-600 mt-2">Tăng '+up+' · Giảm '+dn+' trên '+R.length+' mã đang theo dõi</p>';
-  const s=[...R].sort((a,b)=>pctOf(b)-pctOf(a)),li=(r,i)=>'<div class="flex items-center justify-between text-sm py-1.5 cursor-pointer hover:bg-slate-800/40 rounded-lg px-1.5" data-go="'+r.t+'"><span class="font-semibold">'+r.t+'</span><span class="stat text-slate-400 text-xs">'+nv(r.px,2)+'</span><span class="stat font-semibold '+STC[stOf(r)]+'">'+(pctOf(r)>0?"+":"")+nv(pctOf(r),2)+'%</span></div>';
+  const s=[...R].sort((a,b)=>pctOf(b)-pctOf(a)),li=r=>'<div class="flex items-center justify-between text-sm py-1.5 cursor-pointer hover:bg-slate-800/40 rounded-lg px-1.5" data-go="'+esc(r.t)+'"><span class="font-semibold">'+esc(r.t)+'</span><span class="stat text-slate-400 text-xs">'+nv(r.px,2)+'</span><span class="stat font-semibold '+STC[stOf(r)]+'">'+(pctOf(r)>0?"+":"")+nv(pctOf(r),2)+'%</span></div>';
   $("bUp").innerHTML=s.slice(0,5).map(li).join("");
   $("bDn").innerHTML=s.slice(-5).reverse().map(li).join("");
 }
 function boardRender(){
-  let rows=B.rows.filter(r=>B.f==="all"||(B.f==="w"&&inWL(r.t))||(B.f==="u"&&r.px>r.ref+1e-9)||(B.f==="d"&&r.px<r.ref-1e-9)||(B.f==="r"&&Math.abs(r.px-r.ref)<1e-9));
+  let rows=B.rows.filter(r=>B.f==="all"||(B.f==="w"&&inWL(r.t))||(B.f==="a"&&DB[r.t]));
+  if(B.s)rows=rows.filter(r=>stOf(r)===B.s);
   if(B.q)rows=rows.filter(r=>r.t.includes(B.q));
   rows=[...rows].sort((a,b)=>{const x=sortVal(a,B.sk),y=sortVal(b,B.sk);return(typeof x==="string"?x.localeCompare(y):x-y)*B.sd;});
-  document.querySelectorAll("[data-sk]").forEach(h=>{const on=h.dataset.sk===B.sk;h.classList.toggle("text-indigo-300",on);h.dataset.ar=on?(B.sd>0?" ▲":" ▼"):"";h.querySelector("i").textContent=h.dataset.ar;});
+  document.querySelectorAll("[data-sk]").forEach(h=>{const on=h.dataset.sk===B.sk;h.classList.toggle("text-indigo-300",on);h.querySelector("i").textContent=on?(B.sd>0?" ▲":" ▼"):"";});
+  const sv=B.sk+":"+B.sd,so=$("bSort");so.value=[...so.options].some(o=>o.value===sv)?sv:"x";
+  document.querySelectorAll("#bTabs [data-f]").forEach(b=>b.classList.toggle("btab-on",b.dataset.f===B.f));
+  document.querySelectorAll("#bFltRow [data-s]").forEach(b=>b.classList.toggle("chip-on",b.dataset.s===B.s));
+  $("bFltBtn").classList.toggle("ibtn-on",!!B.s);
   $("bBody").innerHTML=rows.length?rows.map(r=>{
-    const s=stOf(r),c=STC[s],d=r.px-r.ref,p=pctOf(r),f=r.flash==="u"?"fl-u":r.flash==="d"?"fl-d":"";
-    return'<tr class="'+f+' hover:bg-slate-800/30 cursor-pointer" data-go="'+r.t+'"><td class="py-2 pr-2 sticky left-0 z-10 bg-[#1b2537]"><div class="flex items-center gap-1"><button data-star="'+esc(r.t)+'" class="text-base leading-none p-1 -ml-1 '+(inWL(r.t)?"text-amber-300":"text-slate-600 hover:text-amber-300")+'" aria-label="Theo dõi '+esc(r.t)+'">★</button><span class="font-semibold '+c+'">'+esc(r.t)+'</span>'+(DB[r.t]?'<span class="text-[9px] px-1 py-px rounded bg-indigo-500/20 text-indigo-300">BCTC</span>':'')+'</div><div class="text-[10px] text-slate-500 truncate max-w-[110px] pl-5">'+esc(r.n||"")+'</div></td>'+
-     '<td class="py-2 text-right stat text-amber-300">'+nv(r.ref,2)+'</td><td class="py-2 text-right stat text-fuchsia-400">'+nv(ceilP(r.ref),2)+'</td><td class="py-2 text-right stat text-cyan-300">'+nv(floorP(r.ref),2)+'</td>'+
-     '<td class="py-2 text-right stat font-bold '+c+'">'+nv(r.px,2)+'</td><td class="py-2 text-right stat '+c+'">'+(d>0?"+":"")+nv(d,2)+'</td><td class="py-2 text-right stat font-semibold '+c+'">'+(p>0?"+":"")+nv(p,2)+'%</td><td class="py-2 text-right stat text-slate-300">'+nv(r.vol)+'</td></tr>';
-  }).join(""):'<tr><td colspan="8" class="py-6 text-center text-slate-500 text-sm">Không có mã phù hợp</td></tr>';
-  $("bHeat").innerHTML=rows.map(r=>{
-    const s=stOf(r),p=pctOf(r),a=Math.min(.85,.18+Math.abs(p)/7*.67);
-    const bg=s==="c"?"rgba(192,38,211,.7)":s==="f"?"rgba(34,211,238,.55)":p>0?"rgba(16,185,129,"+a+")":p<0?"rgba(244,63,94,"+a+")":"rgba(245,158,11,.4)";
-    return'<button class="rounded-xl p-2.5 text-left transition hover:scale-[1.04] active:scale-95 '+(r.flash?(r.flash==="u"?"fl-u":"fl-d"):"")+'" style="background:'+bg+'" data-go="'+r.t+'"><div class="text-sm font-bold text-white">'+esc(r.t)+'</div><div class="text-[11px] text-white/90 stat">'+nv(r.px,2)+'</div><div class="text-[11px] font-semibold text-white stat">'+(p>0?"+":"")+nv(p,2)+'%</div></button>';
-  }).join("");
+    const s=stOf(r),c=STC[s],d=r.px-r.ref,p=pctOf(r),f=r.flash==="u"?"fl-u":r.flash==="d"?"fl-d":"",same=Math.abs(d)<1e-9;
+    return'<div class="brow brow-r '+f+'" data-go="'+esc(r.t)+'" role="button" tabindex="0">'+
+      '<div class="min-w-0"><div class="flex items-center gap-1"><span class="font-bold text-[15px] '+c+'">'+esc(r.t)+'</span>'+(inWL(r.t)?'<span class="text-amber-300 text-[8px] leading-none" title="Đang theo dõi">●</span>':'')+'</div><div class="text-[10px] text-slate-500 truncate">'+esc(r.n||"")+'</div></div>'+
+      '<div>'+spark(r,c)+'</div>'+
+      '<div class="text-right stat font-semibold text-[15px] '+c+'">'+nv(r.px,2)+'</div>'+
+      '<div class="text-right stat leading-tight '+c+'">'+(same?"":'<div class="text-[13px]">'+(d>0?"+":"")+nv(d,2)+'</div><div class="text-[10px] opacity-80">'+(p>0?"+":"")+nv(p,2)+'%</div>')+'</div>'+
+      '<div class="text-right stat text-[12.5px] text-slate-300 whitespace-nowrap">'+fvol(r.vol)+'</div>'+
+      '<button type="button" data-more="'+esc(r.t)+'" class="mbtn" aria-label="Tuỳ chọn '+esc(r.t)+'"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg></button></div>';
+  }).join(""):'<div class="py-12 px-6 text-center text-sm text-slate-500">'+(B.f==="w"&&!B.q&&!B.s?"Chưa có mã theo dõi. Bấm nút + phía trên hoặc ⋮ ở một mã để thêm.":"Không có mã phù hợp")+'</div>';
   rows.forEach(r=>{r.flash="";});
-  $("bTableWrap").classList.toggle("hidden",B.mode!=="table");
-  $("bHeat").classList.toggle("hidden",B.mode!=="heat");
   boardSide();
 }
-function boardInit(){if(!B.inited){B.inited=true;B.series=idxSeries();boardLoad();}}
-function miniDraw(){$("bxMini").innerHTML=miniIdx("VN30",B.mini.vn30.v,B.mini.vn30.ref)+miniIdx("HNX",B.mini.hnx.v,B.mini.hnx.ref)+miniIdx("UPCOM",B.mini.upcom.v,B.mini.upcom.ref);}
+function boardInit(){if(!B.inited){B.inited=true;B.series=idxSeries();boardLoad();if(typeof WL!=="undefined"&&WL.length)B.f="w";}}
+function miniDraw(){$("bxMini").innerHTML=miniIdx("VN30",B.mini.vn30.v,B.mini.vn30.ref)+miniIdx("HNX",B.mini.hnx.v,B.mini.hnx.ref)+miniIdx("UPCOM",B.mini.upcom.v,B.mini.upcom.ref);stripDraw();}
 function boardShow(){
-  boardInit();miniDraw();srcInit();srcBadge();idxChart();idxUpdate();boardRender();if(SRC.on&&SRC.url)liveStart();
+  boardInit();miniDraw();srcInit();srcBadge();idxUpdate();boardRender();if(SRC.on&&SRC.url)liveStart();
 }
 function simStart(){
   simStop();B.sim=true;
@@ -703,7 +781,7 @@ function simStart(){
     for(let k=0;k<5;k++){
       const r=B.rows[Math.floor(Math.random()*B.rows.length)];if(!r)continue;
       const np=q2(cl(r.px+tkz(r.px)*(Math.floor(Math.random()*5)-2),floorP(r.ref),ceilP(r.ref)));
-      if(np!==r.px){r.flash=np>r.px?"u":"d";r.px=np;r.vol+=Math.round(Math.random()*120);}
+      if(np!==r.px){r.flash=np>r.px?"u":"d";hp(r,r.px,np);r.px=np;r.vol+=Math.round(Math.random()*120);}
     }
     B.idx.v=q2(B.idx.v+(Math.random()-.5)*.8);idxUpdate();boardRender();
   },1600);
@@ -721,26 +799,75 @@ function applyQuotes(txt){
     if(t==="VNINDEX"){B.idx.v=v;const rf=parseFloat(f[2]);if(rf>0)B.idx.ref=rf;n++;return;}
     const vol=parseFloat(f[2]),ref=parseFloat(f[3]);let r=B.rows.find(x=>x.t===t);
     if(!r){B.rows.push({t,n:"",ref:ref>0?ref:v,px:v,vol:vol>=0?vol:0});}
-    else{r.flash=v>r.px?"u":v<r.px?"d":"";r.px=v;if(vol>=0)r.vol=vol;if(ref>0)r.ref=ref;}
+    else{r.flash=v>r.px?"u":v<r.px?"d":"";if(v!==r.px)hp(r,r.px,v);r.px=v;if(vol>=0)r.vol=vol;if(ref>0)r.ref=ref;}
     n++;
   });
   if(n){boardSave();idxUpdate();boardRender();}
   return n;
 }
 function goTicker(t){
-  if(DB[t]){showView("analyze");qa(t);window.scrollTo({top:0,behavior:"smooth"});}
-  else toast("Chưa có báo cáo tài chính của "+t+". Thêm ở tab Nhập dữ liệu.");
+  closeOver();
+  if(DB[t]){pushAn();qa(t);window.scrollTo({top:0});}
+  else rsOpen(t);
+}
+/* Màn hình Thị trường (biểu đồ chỉ số, độ rộng, nguồn giá) */
+function mktOpen(){
+  const s=$("mktSheet");s.classList.remove("hidden");document.body.style.overflow="hidden";s.scrollTop=0;
+  requestAnimationFrame(()=>{idxChart();idxUpdate();if(BCH)BCH.resize();});
+}
+function mktClose(){const s=$("mktSheet");if(s&&!s.classList.contains("hidden")){s.classList.add("hidden");document.body.style.overflow="";}}
+/* Bảng tuỳ chọn của từng mã (nút ⋮) */
+let RS=null;
+function rsOpen(t){RS=t;rsDraw();$("rowSheet").classList.remove("hidden");document.body.style.overflow="hidden";}
+function rsClose(){const s=$("rowSheet");if(s&&!s.classList.contains("hidden")){s.classList.add("hidden");document.body.style.overflow="";RS=null;}}
+function rsDraw(){
+  const r=B.rows.find(x=>x.t===RS);if(!r){rsClose();return;}
+  const s=stOf(r),c=STC[s],p=pctOf(r),has=!!DB[r.t],w=inWL(r.t);
+  $("rsBody").innerHTML=
+   '<div class="flex items-center justify-between gap-3 mb-3"><div class="min-w-0"><div class="text-xl font-bold '+c+'">'+esc(r.t)+'</div><div class="text-xs text-slate-400 truncate">'+esc(has?DB[r.t].name:(r.n||""))+'</div></div><div class="text-right stat shrink-0"><div class="text-xl font-bold '+c+'">'+nv(r.px,2)+'</div><div class="text-xs '+c+'">'+(p>0?"+":"")+nv(p,2)+'%</div></div></div>'+
+   (has?'<button type="button" data-rs="an" class="rsb rsb-main">Xem phân tích '+esc(r.t)+'</button>'
+       :'<p class="text-xs text-slate-400 bg-slate-800/60 rounded-xl p-3 mb-2">Chưa có báo cáo tài chính của '+esc(r.t)+'. Thêm số liệu thật ở mục Nhập dữ liệu để xem phân tích đầy đủ.</p>'+aiHtml(r.t,true)+'<button type="button" data-rs="imp" class="rsb rsb-main">Nhập dữ liệu cho '+esc(r.t)+'</button>')+
+   '<button type="button" data-rs="wl" class="rsb">'+(w?"★ Bỏ khỏi danh sách theo dõi":"☆ Thêm vào danh sách theo dõi")+'</button>'+
+   '<button type="button" data-close-row class="rsb text-slate-400">Đóng</button>';
+}
+function wlAdd(){
+  const t=$("bAdd").value.trim().toUpperCase();if(!t)return;
+  if(!B.rows.some(r=>r.t===t)){toast("Mã "+t+" chưa có trong bảng giá. Thêm giá ở Thị trường, mục cập nhật thủ công.");return;}
+  if(!inWL(t))toggleWL(t);else toast(t+" đã có trong danh sách theo dõi");
+  $("bAdd").value="";B.f="w";boardRender();
+}
+function togRow(id,btn){
+  const el=$(id),open=el.classList.contains("hidden");
+  ["bAddRow","bSrchRow","bFltRow"].forEach(k=>{if(k!==id)$(k).classList.add("hidden");});
+  el.classList.toggle("hidden",!open);
+  ["bAddBtn","bSrchBtn"].forEach(k=>$(k).classList.toggle("ibtn-on",k===btn&&open));
+  if(open&&id!=="bFltRow"){const i=el.querySelector("input");if(i)i.focus();}
+  hdrH();
 }
 document.addEventListener("click",e=>{
-  const sr=e.target.closest("[data-star]");if(sr){toggleWL(sr.dataset.star);return;}
+  const mr=e.target.closest("[data-more]");if(mr){rsOpen(mr.dataset.more);return;}
+  const rb=e.target.closest("[data-rs]");if(rb){const t=RS,a=rb.dataset.rs;if(a==="wl"){toggleWL(t);}else{rsClose();if(a==="an")goTicker(t);else showView("data");}return;}
+  if(e.target.closest("[data-close-row]")){rsClose();return;}
+  if(e.target.closest("[data-close-mkt]")){mktClose();return;}
   const g=e.target.closest("[data-go]");if(g){goTicker(g.dataset.go);return;}
+  if(e.target.closest("#bStrip")){mktOpen();return;}
   const sk=e.target.closest("[data-sk]");if(sk){if(B.sk===sk.dataset.sk)B.sd*=-1;else{B.sk=sk.dataset.sk;B.sd=sk.dataset.sk==="t"?1:-1;}boardRender();return;}
-  const ff=e.target.closest("[data-f]");if(ff){B.f=ff.dataset.f;document.querySelectorAll("[data-f]").forEach(b=>{const on=b===ff;b.classList.toggle("tab-on",on);b.classList.toggle("text-slate-400",!on);});boardRender();return;}
-  const md=e.target.closest("[data-mode]");if(md){B.mode=md.dataset.mode;document.querySelectorAll("[data-mode]").forEach(b=>{const on=b===md;b.classList.toggle("tab-on",on);b.classList.toggle("text-slate-400",!on);});boardRender();return;}
+  const ff=e.target.closest("#bTabs [data-f]");if(ff){B.f=ff.dataset.f;boardRender();return;}
+  const fs=e.target.closest("#bFltRow [data-s]");if(fs){B.s=fs.dataset.s;boardRender();return;}
+  if(e.target.closest("#bAddBtn")){togRow("bAddRow","bAddBtn");return;}
+  if(e.target.closest("#bSrchBtn")){togRow("bSrchRow","bSrchBtn");return;}
+  if(e.target.closest("#bFltBtn")){togRow("bFltRow","bFltBtn");return;}
+  if(e.target.closest("#bAddGo")){wlAdd();return;}
   if(e.target.closest("#bSim")){if(B.live){toast("Đang dùng giá thật, không cần mô phỏng");return;}B.sim?simStop():simStart();return;}
   if(e.target.closest("#bApply")){const n=applyQuotes($("bPaste").value);$("bMsg").textContent=n?"Đã cập nhật "+n+" dòng":"Chưa đọc được dòng nào. Mẫu: VCB,90.1,1200";$("bMsg").className="text-xs mt-2 "+(n?"text-emerald-400":"text-rose-400");return;}
   if(e.target.closest("#bReset")){try{localStorage.removeItem("vsa.board");}catch(_){}B.idx={v:1642.35,ref:1636.9};B.rows=seedRows();idxUpdate();boardRender();toast("Đã trả bảng giá về dữ liệu mẫu");return;}
 });
+document.addEventListener("keydown",e=>{
+  if(e.key==="Escape"){if(!$("rowSheet").classList.contains("hidden"))rsClose();else mktClose();return;}
+  if((e.key==="Enter"||e.key===" ")&&e.target.matches&&e.target.matches('.brow-r,#bStrip')&&!e.target.closest("button[data-more]")){e.preventDefault();e.target.click();}
+  if(e.key==="Enter"&&e.target.id==="bAdd")wlAdd();
+});
+$("bSort").addEventListener("change",e=>{const v=e.target.value;if(v==="x")return;const[k,d]=v.split(":");B.sk=k;B.sd=parseInt(d,10);boardRender();});
 $("bSearch").addEventListener("input",e=>{B.q=e.target.value.trim().toUpperCase();boardRender();});
 
 /* ---------- Sức mạnh ngành ---------- */
@@ -914,7 +1041,7 @@ function saveWL(){try{localStorage.setItem("vsa.watch",JSON.stringify(WL));}catc
 function toggleWL(t){
   WL=inWL(t)?WL.filter(x=>x!==t):WL.concat([t]);saveWL();
   toast(inWL(t)?"Đã thêm "+t+" vào danh sách theo dõi":"Đã bỏ "+t+" khỏi danh sách theo dõi");
-  drawWatch();updateStar();if(!$("v-board").classList.contains("hidden"))boardRender();
+  drawWatch();updateStar();if(!$("v-board").classList.contains("hidden"))boardRender();if(typeof RS!=="undefined"&&RS)rsDraw();
 }
 function updateStar(){
   const b=$("wStar"),t=TU.d&&TU.d.t;if(!b||!t)return;
@@ -932,7 +1059,7 @@ function fillList(){$("tkList").innerHTML=[...new Set(Object.keys(DB).concat(SEE
 
 /* ---------- Tab chi tiết: cuộn vào giữa + vuốt ngang ---------- */
 const _tab=window.tab;
-window.tab=function(id){_tab(id);const b=document.querySelector('.tab[data-t="'+id+'"]');if(b&&b.scrollIntoView)b.scrollIntoView({inline:"center",block:"nearest",behavior:"smooth"});};
+window.tab=function(id){_tab(id);const b=document.querySelector('.tab[data-t="'+id+'"]');const bar=b&&b.parentElement;if(bar&&bar.scrollTo)bar.scrollTo({left:b.offsetLeft-(bar.clientWidth-b.offsetWidth)/2,behavior:"smooth"});};
 (function(){
   const el=$("dashboard");let x0=null,y0=null,t0=0;
   el.addEventListener("touchstart",e=>{if(e.touches.length!==1||e.target.closest(".overflow-x-auto,canvas,input,#dTabs")){x0=null;return;}x0=e.touches[0].clientX;y0=e.touches[0].clientY;t0=Date.now();},{passive:true});
@@ -974,7 +1101,7 @@ function applyLive(j){
   st.forEach(x=>{
     const px=q2(x.p*pkf),ref=x.r?q2(x.r*pkf):null;let r=B.rows.find(y=>y.t===x.t);
     if(!r){r={t:x.t,n:"",ref:ref||px,px,vol:0};B.rows.push(r);}
-    else{if(px!==r.px)r.flash=px>r.px?"u":"d";r.px=px;if(ref)r.ref=ref;}
+    else{if(px!==r.px){r.flash=px>r.px?"u":"d";hp(r,r.px,px);}r.px=px;if(ref)r.ref=ref;}
     if(x.v!=null)r.vol=Math.round(x.v*vkf);n++;
   });
   q.filter(x=>IDXMAP[x.t]).forEach(x=>{const k=IDXMAP[x.t],o=k==="vni"?B.idx:B.mini[k];o.v=x.p;if(x.r)o.ref=x.r;n++;});
@@ -983,7 +1110,8 @@ function applyLive(j){
 function inHours(){const d=new Date(new Date().toLocaleString("en-US",{timeZone:"Asia/Ho_Chi_Minh"})),w=d.getDay(),m=d.getHours()*60+d.getMinutes();return w>=1&&w<=5&&m>=540&&m<=915;}
 function srcStatus(msg,kind){const e=$("srcMsg");if(!e)return;e.textContent=msg;e.className="text-xs mt-2 min-h-[1.25rem] "+(kind==="ok"?"text-emerald-400":kind==="err"?"text-rose-400":"text-slate-400");}
 function hostOf(u){try{return new URL(u).host;}catch(e){return u;}}
-function srcBadge(){
+function srcBadge(){srcBadge0();const bb=$("bdBadge");if(bb){const on=B.live&&B.liveAt;bb.textContent=on?"Trực tuyến":"Dữ liệu mẫu";bb.className="px-2 py-0.5 text-[10px] font-semibold rounded-md "+(on?"bg-emerald-500/15 text-emerald-300":"bg-amber-500/15 text-amber-300");}}
+function srcBadge0(){
   const b=$("bxBadge"),s=$("bxSrc"),st=$("srcState");if(!b)return;
   if(B.live&&B.liveAt){
     b.textContent="Giá trực tuyến · "+B.liveAt.toLocaleTimeString("vi-VN");b.className="px-2 py-0.5 bg-emerald-500/15 text-emerald-300 text-[10px] font-semibold rounded-md";
@@ -1043,12 +1171,104 @@ function srcInit(){
   });
 }
 
+/* ---------- Báo cáo do AI đọc từ PDF (kết quả của bctc_app.py) ---------- */
+const AIM=[["doanh_thu_thuan","Doanh thu thuần"],["loi_nhuan_gop","Lợi nhuận gộp"],["loi_nhuan_sau_thue","Lợi nhuận sau thuế"],["tong_tai_san","Tổng tài sản"],["no_phai_tra","Nợ phải trả"],["dong_tien_kinh_doanh","Dòng tiền kinh doanh"]];
+const AIU={dong:1e-9,nghin_dong:1e-6,trieu_dong:1e-3,ty_dong:1};   /* hệ số quy ra tỷ đồng */
+const AIT={hop_nhat:"hợp nhất",rieng:"riêng lẻ"};
+let AIREPO=[],AILOC=[],AISEL={};
+function aiTk(o){const t=(o.request&&o.request.ticker)||o.ma_co_phieu;return typeof t==="string"&&/^[A-Za-z0-9]{2,10}$/.test(t)?t.toUpperCase():null;}
+function aiOk(o){return !!(o&&typeof o==="object"&&!o.loi&&o.chi_tieu&&typeof o.chi_tieu==="object"&&aiTk(o));}
+function aiClean(o){
+  const r=o.request||{},k=o.ky_bao_cao||{},s=(x,n)=>x==null?null:String(x).slice(0,n),num=v=>typeof v==="number"&&isFinite(v)?v:null;
+  const y=parseInt(r.year!=null?r.year:k.nam,10)||0,q=r.quarter!=null?(parseInt(r.quarter,10)||0):(parseInt(k.quy,10)||0),ct={};
+  AIM.forEach(([key])=>{ct[key]=num(o.chi_tieu[key]);});
+  return{t:aiTk(o),y,q,unit:AIU[o.don_vi]!=null?o.don_vi:null,type:s(o.loai_bao_cao,20),name:s(o.ten_cong_ty,120),
+    src:/^https?:\/\//i.test(String(o.nguon||""))?s(o.nguon,500):null,ct,
+    rf:(Array.isArray(o.red_flags)?o.red_flags:[]).slice(0,20).filter(x=>x&&x.noi_dung).map(x=>({n:s(x.noi_dung,300),l:["cao","trung_binh","thap"].includes(x.muc_do)?x.muc_do:"thap",p:Number.isInteger(x.trang)?x.trang:null})),
+    w:(Array.isArray(o.canh_bao_trich_xuat)?o.canh_bao_trich_xuat:[]).slice(0,10).map(x=>s(x,300))};
+}
+function aiIngest(txt){            /* nhận 1 đối tượng JSON, một mảng, hoặc JSON Lines (tong_hop.jsonl) */
+  const s=String(txt||"").trim();if(!s)return[];let items=[];
+  try{const j=JSON.parse(s);items=Array.isArray(j)?j:[j];}
+  catch(e){s.split(/\n+/).forEach(l=>{l=l.trim();if(!l)return;try{items.push(JSON.parse(l));}catch(_){}});}
+  return items.filter(aiOk).map(aiClean);
+}
+try{AILOC=JSON.parse(localStorage.getItem("vsa.bctc")||"[]").filter(o=>o&&o.t&&o.ct&&typeof o.ct==="object").slice(0,500);}catch(e){AILOC=[];}
+function aiSave(){try{localStorage.setItem("vsa.bctc",JSON.stringify(AILOC));}catch(e){toast("Không lưu được vào bộ nhớ trình duyệt");}}
+const aiKey=r=>r.t+"_"+r.y+"_"+r.q;
+function aiAll(){const m=new Map();AIREPO.forEach(r=>m.set(aiKey(r),{...r,from:"repo"}));AILOC.forEach(r=>m.set(aiKey(r),{...r,from:"local"}));return[...m.values()];}
+function aiFor(t){return aiAll().filter(r=>r.t===t).sort((a,b)=>b.y-a.y||b.q-a.q);}
+const aiPer=r=>r.q?"Quý "+r.q+"/"+r.y:"Năm "+r.y;
+function aiTy(r,v){if(v==null)return"—";const k=AIU[r.unit];if(k==null)return nv(v,0)+" (chưa rõ đơn vị)";const x=v*k;return nv(x,Math.abs(x)<100?1:0)+" tỷ";}
+function aiDerived(r,t){                 /* chỉ số tự tính từ số đã đọc, không qua AI */
+  const c=r.ct,d=[],f=[],bank=DB[t]&&/ngân hàng/i.test(DB[t].sec||"");
+  const rt=(a,b)=>a!=null&&b!=null&&b!==0?a/b:null;
+  const gpm=rt(c.loi_nhuan_gop,c.doanh_thu_thuan),npm=rt(c.loi_nhuan_sau_thue,c.doanh_thu_thuan),dta=rt(c.no_phai_tra,c.tong_tai_san),cfo=rt(c.dong_tien_kinh_doanh,c.loi_nhuan_sau_thue);
+  if(gpm!=null)d.push(["Biên lợi nhuận gộp",nv(gpm*100,1)+"%"]);
+  if(npm!=null)d.push(["Biên lợi nhuận ròng",nv(npm*100,1)+"%"]);
+  if(dta!=null)d.push(["Nợ phải trả / Tổng tài sản",nv(dta*100,1)+"%"]);
+  if(cfo!=null&&c.loi_nhuan_sau_thue>0)d.push(["Dòng tiền KD / Lợi nhuận",nv(cfo,2)+" lần"]);
+  if(c.loi_nhuan_sau_thue>0&&c.dong_tien_kinh_doanh!=null){
+    if(c.dong_tien_kinh_doanh<0)f.push({n:"Dòng tiền kinh doanh âm trong khi có lãi: lợi nhuận chưa chuyển thành tiền.",l:"cao"});
+    else if(cfo<.5)f.push({n:"Dòng tiền kinh doanh chưa bằng nửa lợi nhuận sau thuế.",l:"trung_binh"});
+  }
+  if(!bank&&dta!=null&&dta>.7)f.push({n:"Nợ phải trả chiếm trên 70% tổng tài sản.",l:"trung_binh"});
+  if(c.loi_nhuan_sau_thue!=null&&c.loi_nhuan_sau_thue<0)f.push({n:"Doanh nghiệp đang lỗ ở kỳ này.",l:"cao"});
+  return{d,f};
+}
+const AIC={cao:["Cao","bg-rose-500/15 text-rose-300"],trung_binh:["Trung bình","bg-amber-500/15 text-amber-300"],thap:["Lưu ý","bg-slate-600/30 text-slate-300"]};
+function aiHtml(t,compact){
+  const L=aiFor(t);
+  if(!L.length)return compact?"":'<div class="card p-4"><div class="flex items-center justify-between gap-3"><div class="min-w-0"><h3 class="font-semibold text-sm">Báo cáo do AI đọc từ PDF</h3><p class="text-xs text-slate-500 mt-1">Chưa có báo cáo cho '+esc(t)+'. Nạp kết quả của bctc_app.py ở mục Nhập dữ liệu.</p></div><button type="button" data-ai-go class="shrink-0 bg-slate-800 hover:bg-slate-700 text-xs px-3 py-1.5 rounded-xl">Nạp báo cáo</button></div></div>';
+  const i=Math.min(AISEL[t]||0,L.length-1),r=L[i],dv=aiDerived(r,t);
+  const chips=L.length>1?'<div class="flex gap-1.5 overflow-x-auto mt-2">'+L.map((x,j)=>'<button type="button" data-ai-sel="'+esc(t)+'|'+j+'" class="chip'+(j===i?' chip-on':'')+'">'+esc(aiPer(x))+'</button>').join("")+'</div>':'';
+  const flags=dv.f.map(x=>({n:x.n,l:x.l,auto:1})).concat(r.rf);
+  return'<div class="card p-4 sm:p-5 fi"><div class="flex flex-wrap items-center gap-2"><h3 class="font-semibold text-sm">Báo cáo do AI đọc từ PDF</h3><span class="px-2 py-0.5 bg-indigo-500/15 text-indigo-300 text-[10px] font-semibold rounded-md">'+esc(aiPer(r))+(r.type&&AIT[r.type]?" · "+AIT[r.type]:"")+'</span></div>'+chips+
+   '<div class="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-3">'+AIM.map(([k,l])=>'<div class="bg-slate-900/60 rounded-xl p-2.5"><div class="text-[10px] text-slate-500">'+l+'</div><div class="text-sm font-bold stat">'+aiTy(r,r.ct[k])+'</div></div>').join("")+'</div>'+
+   (dv.d.length?'<div class="grid grid-cols-2 gap-x-4 gap-y-1 mt-3 text-xs">'+dv.d.map(([l,v])=>'<div class="flex justify-between gap-2"><span class="text-slate-400">'+l+'</span><span class="stat font-semibold">'+v+'</span></div>').join("")+'<div class="col-span-2 text-[10px] text-slate-600">Các chỉ số trên tự tính từ số đã đọc.</div></div>':'')+
+   (flags.length?'<h4 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mt-4 mb-1.5">Điểm cần lưu ý</h4><div class="space-y-1.5">'+flags.map(x=>{const c=AIC[x.l]||AIC.thap;return'<div class="flex items-start gap-2 text-sm"><span class="mt-0.5 shrink-0 text-[10px] px-1.5 py-0.5 rounded '+c[1]+'">'+c[0]+'</span><span class="text-slate-300">'+esc(x.n)+(x.auto?' <span class="text-[10px] text-slate-500">(tự tính)</span>':'')+(x.p?' <span class="text-[10px] text-slate-500">trang '+x.p+'</span>':'')+'</span></div>';}).join("")+'</div>':'<p class="text-xs text-slate-500 mt-4">Không ghi nhận điểm rủi ro nào trong phần AI đã đọc.</p>')+
+   (r.w.length?'<div class="mt-3 text-[11px] text-amber-300/90 bg-amber-500/10 rounded-lg p-2.5">'+r.w.map(esc).join("<br>")+'</div>':'')+
+   '<p class="text-[11px] text-slate-500 mt-3">AI đọc từ PDF nên có thể nhầm cột hoặc đơn vị. Hãy đối chiếu với file gốc trước khi dùng.'+(r.src?' <a class="text-indigo-300 underline" href="'+esc(r.src)+'" target="_blank" rel="noopener noreferrer">Mở PDF gốc</a>':'')+'</p></div>';
+}
+function aiDraw(t){const e=$("aiCard");if(e)e.innerHTML=aiHtml(t,false);}
+function aiRefresh(){
+  if(TU.d)aiDraw(TU.d.t);
+  if(typeof RS!=="undefined"&&RS)rsDraw();
+  if(curV==="data")dataRender();
+}
+/* Mục nạp báo cáo trong màn hình Nhập dữ liệu */
+function aiImpHtml(){
+  const all=aiAll().sort((a,b)=>a.t.localeCompare(b.t)||b.y-a.y||b.q-a.q);
+  return'<div class="card p-4 sm:p-5 fi mt-4"><h2 class="font-semibold text-sm mb-1">Báo cáo do AI đọc từ PDF</h2>'+
+   '<p class="text-xs text-slate-500 mb-3">Chạy bctc_app.py, rồi chọn file kết quả trong thư mục output (từng mã .json hoặc tong_hop.jsonl). Hoặc đưa thư mục <span class="font-mono text-slate-300">bctc</span> có file <span class="font-mono text-slate-300">tong_hop.jsonl</span> lên cùng chỗ với index.html, app tự nạp khi mở.</p>'+
+   '<label class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white text-sm font-medium px-4 py-2 rounded-xl cursor-pointer transition"><input id="aiFile" type="file" accept=".json,.jsonl,application/json" multiple class="sr-only"/>Chọn file kết quả</label>'+
+   '<div id="aiMsg" class="text-xs mt-2 min-h-[1.25rem]" role="status"></div>'+
+   (all.length?'<h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mt-3 mb-1">Đã nạp ('+all.length+')</h3>'+all.map(r=>'<div class="flex items-center justify-between gap-2 py-2 border-t border-slate-800/70 first:border-0"><div class="min-w-0"><span class="font-semibold">'+esc(r.t)+'</span> <span class="text-slate-400 text-xs">'+esc(aiPer(r))+' · '+(r.from==="repo"?"từ thư mục bctc":"từ máy này")+'</span></div>'+(r.from==="local"?'<button type="button" data-ai-del="'+esc(aiKey(r))+'" class="text-xs text-rose-300 hover:text-rose-200 px-2 py-1">Xoá</button>':'')+'</div>').join(""):'<p class="text-xs text-slate-500 mt-3">Chưa nạp báo cáo nào.</p>')+'</div>';
+}
+const _dr0=window.dataRender;
+window.dataRender=function(){_dr0();$("v-data").insertAdjacentHTML("beforeend",aiImpHtml());};
+document.addEventListener("change",async e=>{
+  if(e.target.id!=="aiFile")return;
+  let n=0,bad=0;
+  for(const f of e.target.files){
+    if(f.size>20*1024*1024){bad++;continue;}
+    try{const got=aiIngest(await f.text());if(!got.length)bad++;got.forEach(r=>{AILOC=AILOC.filter(x=>aiKey(x)!==aiKey(r)).concat([r]);n++;});}catch(_){bad++;}
+  }
+  aiSave();aiRefresh();
+  const m=$("aiMsg");if(m){m.textContent=(n?"Đã nạp "+n+" báo cáo. ":"")+(bad?bad+" file không đọc được hoặc là báo cáo lỗi.":"");m.className="text-xs mt-2 "+(n&&!bad?"text-emerald-400":bad?"text-amber-300":"text-slate-400");}
+});
+document.addEventListener("click",e=>{
+  const s=e.target.closest("[data-ai-sel]");if(s){const[t,j]=s.dataset.aiSel.split("|");AISEL[t]=parseInt(j,10)||0;if(TU.d&&TU.d.t===t)aiDraw(t);if(typeof RS!=="undefined"&&RS===t)rsDraw();return;}
+  if(e.target.closest("[data-ai-go]")){closeOver();showView("data");return;}
+  const d=e.target.closest("[data-ai-del]");if(d){AILOC=AILOC.filter(x=>aiKey(x)!==d.dataset.aiDel);aiSave();aiRefresh();}
+});
+fetch("./bctc/tong_hop.jsonl",{cache:"no-store"}).then(r=>r.ok?r.text():"").then(t=>{AIREPO=aiIngest(t);if(AIREPO.length)aiRefresh();}).catch(()=>{});
+
 loadCustom();
 (function boot(){
-  fillList();drawWatch();
-  const h=location.hash.slice(1);let v=VIEWS.includes(h)?h:null;
-  if(!v){try{v=localStorage.getItem("vsa.view");}catch(e){}}
-  showView(VIEWS.includes(v)?v:"analyze",{keepScroll:1});
+  fillList();drawWatch();hdrH();
+  const h=location.hash.slice(1);
+  showView(VIEWS.includes(h)&&h!=="analyze"?h:"board",{keepScroll:1});
 })();
 </script>
 
@@ -1097,3 +1317,4 @@ loadCustom();
 </script>
 </body>
 </html>
+successfully downloaded text file (SHA: 71593a45f9ed39243e85f107bab4a79aa679a363)
