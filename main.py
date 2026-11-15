@@ -481,6 +481,7 @@ async def fetch_vps_board(symbols: list[str]) -> list[dict]:
 
 CAFEEF_BCTC_URL = "https://apiweb.cafef.vn/api/v1/BCTC/GetReportSummary"
 CAFEEF_INDICATORS_URL = "https://apiweb.cafef.vn/api/v2/BCTC/FinancialIndicators"
+CAFEEF_CASHFLOW_URL = "https://apiweb.cafef.vn/api/v1/BCTC/GetReportLCTT"
 
 
 async def _cafef_json(url: str) -> dict[str, Any]:
@@ -534,6 +535,37 @@ async def fetch_cafef_indicators(symbol: str) -> tuple[list[dict[str, Any]], dic
     return rows, labels
 
 
+async def fetch_cafef_cashflow(symbol: str, type_time: str = "NAM") -> tuple[list[dict[str, Any]], dict[str, str]]:
+    """Fetch CafeF's grouped cash-flow report (CFO/CFI/CFF and ending cash)."""
+    symbol = symbol.upper().strip()
+    rows: list[dict[str, Any]] = []
+    labels: dict[str, str] = {}
+    for page in range(1, 12):
+        url = f"{CAFEEF_CASHFLOW_URL}?symbol={symbol}&pageIndex={page}&pageSize=4&reportType=ALL&TypeTime={type_time}"
+        payload = await _cafef_json(url)
+        value = payload.get("value") or {}
+        for group in value.get("templace") or []:
+            for item in group.get("data") or []:
+                if item.get("code") and item.get("name"):
+                    labels[item["code"]] = item["name"]
+        page_rows: list[dict[str, Any]] = []
+        for group in value.get("data") or []:
+            for row in group.get("data") or []:
+                existing = next((item for item in page_rows if item.get("year") == row.get("year")), None)
+                if existing is None:
+                    page_rows.append({**row, "data": list(row.get("data") or [])})
+                else:
+                    existing["data"].extend(row.get("data") or [])
+        if not page_rows:
+            break
+        rows.extend(page_rows)
+        if len(rows) >= int(value.get("count") or 0):
+            break
+    if rows and any(str(row.get("symbol", "")).upper() != symbol for row in rows):
+        raise ValueError(f"CafeF trả sai mã dòng tiền cho yêu cầu {symbol}")
+    return rows, labels
+
+
 def _cafef_value(row: dict[str, Any], code: str) -> Optional[float]:
     for item in row.get("data") or []:
         if item.get("code") == code:
@@ -570,6 +602,7 @@ async def build_cafef_fundamentals(symbol: str) -> dict[str, Any]:
     income, income_labels = await fetch_cafef_report(symbol, "KQKD", "NAM")
     balance, balance_labels = await fetch_cafef_report(symbol, "CDKT", "NAM")
     indicators, _ = await fetch_cafef_indicators(symbol)
+    cashflow, cashflow_labels = await fetch_cafef_cashflow(symbol, "NAM")
     if not income or not balance:
         raise ValueError(f"CafeF chưa có đủ BCTC cho {symbol}")
 
@@ -587,6 +620,16 @@ async def build_cafef_fundamentals(symbol: str) -> dict[str, Any]:
     operating = _series(income, income_labels, "lợi nhuận thuần từ hoạt động kinh doanh")
     pretax = _series(income, income_labels, "tổng lợi nhuận kế toán trước thuế")
     net = _series(income, income_labels, "lợi nhuận sau thuế")
+
+    cashflow = sorted(cashflow, key=lambda row: int(row.get("year") or 0))[-3:]
+    cash = {
+        "CFO": [_cafef_value(row, "HDKD_20") / 1_000_000_000 if _cafef_value(row, "HDKD_20") is not None else None for row in cashflow],
+        "CFI": [_cafef_value(row, "HDDT_29") / 1_000_000_000 if _cafef_value(row, "HDDT_29") is not None else None for row in cashflow],
+        "CFF": [_cafef_value(row, "HDTC_38") / 1_000_000_000 if _cafef_value(row, "HDTC_38") is not None else None for row in cashflow],
+        "Tiền cuối kỳ": [_cafef_value(row, "HDTC_42") / 1_000_000_000 if _cafef_value(row, "HDTC_42") is not None else None for row in cashflow],
+    }
+    capex = [_cafef_value(row, "HDDT_22") / 1_000_000_000 if _cafef_value(row, "HDDT_22") is not None else None for row in cashflow]
+    fcf_series = [None if cash["CFO"][i] is None or capex[i] is None else cash["CFO"][i] + capex[i] for i in range(len(cashflow))]
 
     bs = {
         "Tiền": _series(balance, balance_labels, "tiền và các khoản tương đương tiền"),
@@ -637,12 +680,12 @@ async def build_cafef_fundamentals(symbol: str) -> dict[str, Any]:
         "symbol": symbol, "name": f"Mã {symbol}", "sector": "Chưa xác định", "exchange": "",
         "shares": None, "years": years, "revenue": revenue, "netProfit": net,
         "margins": {"gpm": [None if revenue[i] in (None, 0) or gross[i] is None else gross[i] / revenue[i] * 100 for i in range(len(revenue))], "opm": [None] * len(revenue), "npm": [None if revenue[i] in (None, 0) or net[i] is None else net[i] / revenue[i] * 100 for i in range(len(revenue))]},
-        "balanceSheet": bs, "incomeStatement": is_data, "fcf": None, "ebitda": None,
+        "balanceSheet": bs, "incomeStatement": is_data, "cashFlow": cash, "fcfSeries": fcf_series, "fcf": fcf_series[-1] if fcf_series else None, "ebitda": None,
         "ratios": ratios, "sectorAvg": {"pe": None, "pb": None, "ev": None, "roe": None, "npm": None, "de": None},
         "health": health, "quality": health_total, "peers": [], "strengths": [], "risks": [],
         "note": "Phân tích dùng BCTC và chỉ số do CafeF cung cấp; các chỉ tiêu CafeF không trả về được giữ là chưa có dữ liệu.",
         "hasFundamentals": True, "source": "cafef", "sourceUrl": "https://cafef.vn/du-lieu/hose/" + symbol.lower() + "-tai-chinh.chn",
-        "retrievedAt": datetime.now().isoformat(), "currency": "VND", "unit": "tỷ đồng",
+        "retrievedAt": datetime.now().isoformat(), "currency": "VND", "unit": "tỷ đồng", "cashFlowSourceUrl": f"{CAFEEF_CASHFLOW_URL}?symbol={symbol}&reportType=ALL&TypeTime=NAM",
     }
 
 
@@ -801,7 +844,7 @@ async def stock_financials(symbol: str):
     symbol = symbol.upper().strip()
     try:
         data = await build_cafef_fundamentals(symbol)
-        return {"symbol": symbol, "years": data["years"], "balanceSheet": data["balanceSheet"], "incomeStatement": data["incomeStatement"], "revenue": data["revenue"], "netProfit": data["netProfit"], "margins": data["margins"], "fcf": data["fcf"], "ebitda": data["ebitda"], "source": data["source"], "sourceUrl": data["sourceUrl"], "retrievedAt": data["retrievedAt"], "unit": data["unit"]}
+        return {"symbol": symbol, "years": data["years"], "balanceSheet": data["balanceSheet"], "incomeStatement": data["incomeStatement"], "cashFlow": data["cashFlow"], "fcfSeries": data["fcfSeries"], "revenue": data["revenue"], "netProfit": data["netProfit"], "margins": data["margins"], "fcf": data["fcf"], "ebitda": data["ebitda"], "source": data["source"], "sourceUrl": data["sourceUrl"], "cashFlowSourceUrl": data["cashFlowSourceUrl"], "retrievedAt": data["retrievedAt"], "unit": data["unit"]}
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"Không lấy được BCTC CafeF cho {symbol}: {exc}")
 

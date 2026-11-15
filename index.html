@@ -224,6 +224,8 @@ header{padding-top:env(safe-area-inset-top,0px)}
 <table class="w-full text-sm min-w-[480px]"><thead><tr class="text-slate-500 border-b border-slate-700/80 text-xs"><th class="text-left py-2">Chỉ tiêu</th><th class="text-right py-2">2023</th><th class="text-right py-2">2024</th><th class="text-right py-2">2025E</th><th class="text-right py-2">YoY%</th></tr></thead><tbody id="bsT" class="divide-y divide-slate-800/60"></tbody></table></div>
 <div class="card p-4 overflow-x-auto"><h3 class="font-semibold text-sm mb-3">Kết quả kinh doanh (tỷ)</h3>
 <table class="w-full text-sm min-w-[480px]"><thead><tr class="text-slate-500 border-b border-slate-700/80 text-xs"><th class="text-left py-2">Chỉ tiêu</th><th class="text-right py-2">2023</th><th class="text-right py-2">2024</th><th class="text-right py-2">2025E</th><th class="text-right py-2">YoY%</th></tr></thead><tbody id="isT" class="divide-y divide-slate-800/60"></tbody></table></div>
+<div class="card p-4 overflow-x-auto"><h3 class="font-semibold text-sm mb-3">Lưu chuyển tiền tệ (tỷ)</h3>
+<table class="w-full text-sm min-w-[480px]"><thead><tr class="text-slate-500 border-b border-slate-700/80 text-xs"><th class="text-left py-2">Chỉ tiêu</th><th class="text-right py-2">2023</th><th class="text-right py-2">2024</th><th class="text-right py-2">2025E</th><th class="text-right py-2">YoY%</th></tr></thead><tbody id="cfT" class="divide-y divide-slate-800/60"></tbody></table><p class="text-[10px] text-slate-500 mt-2">CFO = dòng tiền từ hoạt động kinh doanh; FCF = CFO + chi đầu tư TSCĐ. Chỉ tính khi CafeF trả đủ dữ liệu.</p></div>
 <div class="card p-4"><h3 class="font-semibold text-sm mb-3">Cơ cấu TS & NV</h3><div class="h-52"><canvas id="chSt"></canvas></div></div>
 </div>
 
@@ -492,13 +494,20 @@ document.getElementById("dismissInstall")?.addEventListener("click",()=>document
 		if(rows.some(x=>String(x.symbol||"").toUpperCase()!==symbol))throw new Error("CafeF trả sai mã cổ phiếu");
 		return {rows:rows.sort((a,b)=>Number(a.year||0)-Number(b.year||0)).slice(-3),labels};
 	}
+	async function cafefCashflow(symbol){
+		const p=await (await fetch(`https://apiweb.cafef.vn/api/v1/BCTC/GetReportLCTT?symbol=${encodeURIComponent(symbol)}&pageIndex=1&pageSize=4&reportType=ALL&TypeTime=NAM`,{cache:"no-store"})).json(),v=p.value||{},labels={};
+		(v.templace||[]).forEach(g=>(g.data||[]).forEach(x=>{labels[x.code]=x.name;}));
+		const rows=[];(v.data||[]).forEach(g=>(g.data||[]).forEach(x=>{if(!rows.some(r=>r.year===x.year))rows.push(x);else Object.assign(rows.find(r=>r.year===x.year),{data:[...(rows.find(r=>r.year===x.year).data||[]),...(x.data||[])]});}));
+		return {rows:rows.sort((a,b)=>Number(a.year||0)-Number(b.year||0)).slice(-3),labels};
+	}
 	function cafefValue(row,code){const x=(row.data||[]).find(v=>v.code===code);return x&&x.value!=null?Number(x.value):null;}
 	function cafefCode(labels,...terms){return Object.entries(labels).find(([,name])=>terms.every(t=>String(name).toLowerCase().includes(t)))?.[0]||null;}
 	function cafefSeries(report,...terms){const code=cafefCode(report.labels,...terms);return report.rows.map(row=>{const v=code?cafefValue(row,code):null;return v==null?null:v/1e9;});}
 	function cafefIndicator(rows,code){return rows.length?cafefValue(rows[0],code):null;}
 	async function fetchStaticCafeF(symbol){
-		const [inc,bal,indPayload,quotePayload]=await Promise.all([
+		const [inc,bal,cf,indPayload,quotePayload]=await Promise.all([
 			cafefReport(symbol,"KQKD"),cafefReport(symbol,"CDKT"),
+			cafefCashflow(symbol),
 			fetch(`https://apiweb.cafef.vn/api/v2/BCTC/FinancialIndicators?symbol=${encodeURIComponent(symbol)}&pageIndex=1&pageSize=100`,{cache:"no-store"}).then(r=>r.json()),
 			fetch(`https://bgapidatafeed.vps.com.vn/getliststockdata/${encodeURIComponent(symbol)}`,{cache:"no-store"}).then(r=>r.json()).catch(()=>[])
 		]);
@@ -506,6 +515,7 @@ document.getElementById("dismissInstall")?.addEventListener("click",()=>document
 		const inds=(indPayload.value||{}).data||[],revenue0=cafefSeries(inc,"doanh thu thuần"),revenue=revenue0.every(x=>x==null)?cafefSeries(inc,"thu nhập lãi thuần"):revenue0;
 		const fallbackRevenue=revenue.every(x=>x==null)?cafefSeries(inc,"tổng thu nhập hoạt động"):revenue;
 		const gross=cafefSeries(inc,"lợi nhuận gộp"),net=cafefSeries(inc,"lợi nhuận sau thuế");
+		const cash={CFO:cf.rows.map(r=>{const v=cafefValue(r,"HDKD_20");return v==null?null:v/1e9;}),CFI:cf.rows.map(r=>{const v=cafefValue(r,"HDDT_29");return v==null?null:v/1e9;}),CFF:cf.rows.map(r=>{const v=cafefValue(r,"HDTC_38");return v==null?null:v/1e9;}),"Tiền cuối kỳ":cf.rows.map(r=>{const v=cafefValue(r,"HDTC_42");return v==null?null:v/1e9;})},capex=cf.rows.map(r=>{const v=cafefValue(r,"HDDT_22");return v==null?null:v/1e9;}),fcfSeries=cf.rows.map((r,i)=>cash.CFO[i]==null||capex[i]==null?null:cash.CFO[i]+capex[i]);
 		const bs={"Tiền":cafefSeries(bal,"tiền và các khoản tương đương tiền"),"TS ngắn hạn":cafefSeries(bal,"tài sản ngắn hạn"),"TS dài hạn":cafefSeries(bal,"tài sản dài hạn"),"Tổng TS":cafefSeries(bal,"tổng cộng tài sản"),"Nợ NH":cafefSeries(bal,"nợ ngắn hạn"),"Nợ phải trả":cafefSeries(bal,"tổng cộng nợ phải trả"),"VCSH":cafefSeries(bal,"vốn chủ sở hữu")};
 		const isData={"DT thuần":fallbackRevenue,"GVHB":cafefSeries(inc,"giá vốn hàng bán"),"LN gộp":gross,"LN HĐKD":cafefSeries(inc,"lợi nhuận thuần từ hoạt động kinh doanh"),"LNTT":cafefSeries(inc,"tổng lợi nhuận kế toán trước thuế"),"LNST":net};
 		const last=a=>a.length?a[a.length-1]:null,total=last(bs["Tổng TS"]),liab=last(bs["Nợ phải trả"]),equity=last(bs.VCSH),ca=last(bs["TS ngắn hạn"]),clv=last(bs["Nợ NH"]);
@@ -517,7 +527,7 @@ document.getElementById("dismissInstall")?.addEventListener("click",()=>document
 		if(ratios.npm==null&&last(net)!=null&&last(fallbackRevenue))ratios.npm=last(net)/last(fallbackRevenue)*100;
 		const healthTotal=Math.round(Math.max(0,Math.min(100,50+(ratios.roe||0)*1.2-(ratios.de||0)*8))),q=quotePayload[0]||{};
 		let price=Number(q.lastPrice||0);if(price&&price<1000)price*=1000;
-		return {symbol,name:`Mã ${symbol}`,sector:"Chưa xác định",exchange:"—",price:price||null,changePercent:q.changePc!=null?Number(q.changePc):0,years:inc.rows.map(x=>Number(x.year)),revenue:fallbackRevenue,netProfit:net,margins:{g:fallbackRevenue.map((v,i)=>v&&gross[i]!=null?gross[i]/v*100:null),o:fallbackRevenue.map(()=>null),n:fallbackRevenue.map((v,i)=>v&&net[i]!=null?net[i]/v*100:null)},balanceSheet:bs,incomeStatement:isData,ratios,sectorAvg:{pe:null,pb:null,ev:null,roe:null,npm:null,de:null},health:{total:healthTotal,liq:ca&&clv?Math.round(Math.min(100,ca/clv*40)):50,prof:Math.round(Math.min(100,50+(ratios.npm||0)*1.5)),lev:Math.round(Math.max(0,100-(ratios.de||0)*25)),eff:50},quality:healthTotal,peers:[],strengths:[],risks:[],fcf:null,ebitda:null,note:"Phân tích dùng BCTC và chỉ số do CafeF cung cấp; các chỉ tiêu thiếu được giữ là chưa có dữ liệu.",hasFundamentals:true,source:"cafef",sourceUrl:`https://cafef.vn/du-lieu/hose/${symbol.toLowerCase()}-tai-chinh.chn`,retrievedAt:new Date().toISOString(),currency:"VND",unit:"tỷ đồng"};
+		return {symbol,name:`Mã ${symbol}`,sector:"Chưa xác định",exchange:"—",price:price||null,changePercent:q.changePc!=null?Number(q.changePc):0,years:inc.rows.map(x=>Number(x.year)),revenue:fallbackRevenue,netProfit:net,margins:{g:fallbackRevenue.map((v,i)=>v&&gross[i]!=null?gross[i]/v*100:null),o:fallbackRevenue.map(()=>null),n:fallbackRevenue.map((v,i)=>v&&net[i]!=null?net[i]/v*100:null)},balanceSheet:bs,incomeStatement:isData,cashFlow:cash,fcfSeries,fcf:fcfSeries.at(-1)??null,ratios,sectorAvg:{pe:null,pb:null,ev:null,roe:null,npm:null,de:null},health:{total:healthTotal,liq:ca&&clv?Math.round(Math.min(100,ca/clv*40)):50,prof:Math.round(Math.min(100,50+(ratios.npm||0)*1.5)),lev:Math.round(Math.max(0,100-(ratios.de||0)*25)),eff:50},quality:healthTotal,peers:[],strengths:[],risks:[],ebitda:null,note:"Phân tích dùng BCTC, LCTT và chỉ số do CafeF cung cấp; các chỉ tiêu thiếu được giữ là chưa có dữ liệu.",hasFundamentals:true,source:"cafef",sourceUrl:`https://cafef.vn/du-lieu/hose/${symbol.toLowerCase()}-tai-chinh.chn`,retrievedAt:new Date().toISOString(),currency:"VND",unit:"tỷ đồng"};
 	}
 	async function render(tk){
 	showView("analyze",{keepScroll:1});
@@ -536,7 +546,7 @@ document.getElementById("dismissInstall")?.addEventListener("click",()=>document
 			d={...payload,t:payload.symbol,sec:payload.sector||"Chưa xác định",ex:payload.exchange||"—",price:payload.price,chg:payload.changePercent||0,mcap:payload.marketCap,sh:payload.shares,h:{t:payload.health?.total||0,l:payload.health?.liq||0,p:payload.health?.prof||0,v:payload.health?.lev||0,e:payload.health?.eff||0},q:payload.quality||0,r:payload.ratios||{},sa:payload.sectorAvg||{},ys:payload.years||[],rev:payload.revenue||[],np:payload.netProfit||[],m:payload.margins||{},bs:payload.balanceSheet||{},is:payload.incomeStatement||{},str:payload.strengths||[],rsk:payload.risks||{}};
 			}
 			if(d&&!d.t){const payload=d;d={...payload,t:payload.symbol,sec:payload.sector||"Chưa xác định",ex:payload.exchange||"—",price:payload.price,chg:payload.changePercent||0,mcap:payload.marketCap,sh:payload.shares,h:{t:payload.health?.total||0,l:payload.health?.liq||0,p:payload.health?.prof||0,v:payload.health?.lev||0,e:payload.health?.eff||0},q:payload.quality||0,r:payload.ratios||{},sa:payload.sectorAvg||{},ys:payload.years||[],rev:payload.revenue||[],np:payload.netProfit||[],m:payload.margins||{},bs:payload.balanceSheet||{},is:payload.incomeStatement||{},str:payload.strengths||[],rsk:payload.risks||{}};}
-			if(d){d.m={g:d.m?.g||d.m?.gpm||[],o:d.m?.o||d.m?.opm||[],n:d.m?.n||d.m?.npm||[]};}
+			if(d){d.m={g:d.m?.g||d.m?.gpm||[],o:d.m?.o||d.m?.opm||[],n:d.m?.n||d.m?.npm||[]};d.cf=d.cf||d.cashFlow||{};}
 		}catch(error){
 		document.getElementById("loadingState").classList.add("hidden");
 		toast(error.message||"Không lấy được dữ liệu BCTC CafeF");
@@ -591,7 +601,7 @@ document.getElementById("dpE").textContent=em.toFixed(2)+"x";
 document.getElementById("dpR").textContent=(npm*at*em*100).toFixed(1)+"%";
 document.getElementById("dpI").textContent=npm>.12&&at>1.2?"ROE cao nhờ biên LN tốt & hiệu quả TS. Dấu hiệu chất lượng cao.":em>2.5?"ROE được hỗ trợ bởi đòn bẩy. Cần theo dõi rủi ro nợ.":npm<.05?"Biên LN thấp kéo ROE xuống. Cải thiện biên LN là ưu tiên.":"Cấu trúc ROE khá cân bằng.";
 // tables
-ft("bsT",d.bs);ft("isT",d.is);
+	ft("bsT",d.bs);ft("isT",d.is);ft("cfT",d.cf);
 // val
 	document.getElementById("vPE").textContent=r.pe==null?"—":r.pe.toFixed(1);document.getElementById("vPB").textContent=r.pb==null?"—":r.pb.toFixed(2);
 	document.getElementById("vEV").textContent=r.ev!=null?r.ev.toFixed(1):"—";document.getElementById("vPG").textContent=r.peg==null?"—":r.peg.toFixed(2);
