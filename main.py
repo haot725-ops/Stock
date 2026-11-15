@@ -636,13 +636,21 @@ async def build_cafef_fundamentals(symbol: str) -> dict[str, Any]:
         "TS ngắn hạn": _series(balance, balance_labels, "tài sản ngắn hạn"),
         "TS dài hạn": _series(balance, balance_labels, "tài sản dài hạn"),
         "Tổng TS": _series(balance, balance_labels, "tổng cộng tài sản"),
+        "Phải thu NH": _series(balance, balance_labels, "các khoản phải thu ngắn hạn"),
+        "Hàng tồn kho": _series(balance, balance_labels, "hàng tồn kho"),
+        "TSCĐ": _series(balance, balance_labels, "tài sản cố định"),
         "Nợ NH": _series(balance, balance_labels, "nợ ngắn hạn"),
-        "Nợ phải trả": _series(balance, balance_labels, "tổng cộng nợ phải trả"),
+        "Nợ DH": _series(balance, balance_labels, "nợ dài hạn"),
+        "Nợ phải trả": _series(balance, balance_labels, "nợ phải trả"),
+        "Phải trả người bán": _series(balance, balance_labels, "phải trả người bán ngắn hạn"),
+        "Vay NH": _series(balance, balance_labels, "vay và nợ thuê tài chính ngắn hạn"),
+        "Vay DH": _series(balance, balance_labels, "vay và nợ thuê tài chính dài hạn"),
         "VCSH": _series(balance, balance_labels, "vốn chủ sở hữu"),
     }
     is_data = {
         "DT thuần": revenue, "GVHB": cogs, "LN gộp": gross,
         "LN HĐKD": operating, "LNTT": pretax, "LNST": net,
+        "Chi phí lãi vay": _series(income, income_labels, "chi phí lãi vay"),
     }
     latest = indicators[0] if indicators else {}
     raw = {code: _latest_indicator(indicators, code) for code in ("EPS", "BV", "PE", "PB", "GOS", "ROS", "ROE", "ROA", "TSTTHH", "KNTTLV", "DAR")}
@@ -672,6 +680,49 @@ async def build_cafef_fundamentals(symbol: str) -> dict[str, Any]:
         "pe": clean(raw["PE"]), "pb": clean(raw["PB"]), "ps": None, "ev": None, "peg": None,
         "dy": None, "fy": None, "rg": None, "ng": None, "eg": None,
     }
+    safe_div = lambda a, b: a / b if a is not None and b not in (None, 0) else None
+    interest = is_data["Chi phí lãi vay"]
+    receivables, inventory, payables = bs["Phải thu NH"], bs["Hàng tồn kho"], bs["Phải trả người bán"]
+    ratios["qr"] = safe_div(current_assets - inventory[-1] if current_assets is not None and inventory and inventory[-1] is not None else None, current_liabilities)
+    ratios["cash"] = safe_div(bs["Tiền"][-1] if bs["Tiền"] else None, current_liabilities)
+    ratios["at"] = safe_div(revenue[-1] if revenue else None, total_assets)
+    ratios["it"] = safe_div(cogs[-1] if cogs else None, inventory[-1] if inventory else None)
+    ratios["rt"] = safe_div(revenue[-1] if revenue else None, receivables[-1] if receivables else None)
+    ratios["pt"] = safe_div(cogs[-1] if cogs else None, payables[-1] if payables else None)
+    ratios["dio"] = safe_div(365, ratios["it"])
+    ratios["dso"] = safe_div(365, ratios["rt"])
+    ratios["dpo"] = safe_div(365, ratios["pt"])
+    ratios["ccc"] = ratios["dio"] + ratios["dso"] - ratios["dpo"] if all(ratios.get(k) is not None for k in ("dio", "dso", "dpo")) else None
+    ratios["ic"] = safe_div((pretax[-1] if pretax and pretax[-1] is not None else 0) + (interest[-1] if interest and interest[-1] is not None else 0), interest[-1] if interest else None)
+    ratios["leverage"] = safe_div(total_assets, equity)
+    ratios["debtToTangible"] = safe_div(liabilities, equity - (bs["TSCĐ"][-1] if bs["TSCĐ"] and bs["TSCĐ"][-1] is not None else 0) if equity is not None else None)
+    debt = (bs["Vay NH"][-1] if bs["Vay NH"] and bs["Vay NH"][-1] is not None else 0) + (bs["Vay DH"][-1] if bs["Vay DH"] and bs["Vay DH"][-1] is not None else 0)
+    invested_capital = (equity or 0) + debt - (bs["Tiền"][-1] if bs["Tiền"] and bs["Tiền"][-1] is not None else 0)
+    ratios["roic"] = safe_div((operating[-1] if operating and operating[-1] is not None else None) * 0.8 if operating and operating[-1] is not None else None, invested_capital)
+    for key in ("pt", "dio", "dso", "dpo", "ccc", "leverage", "debtToTangible", "roic"):
+        ratios.setdefault(key, None)
+    fr_keys = ("cr", "qr", "cash", "it", "dio", "rt", "dso", "pt", "dpo", "ccc", "da", "de", "ic", "roa", "roe", "roic", "gpm", "npm", "at", "leverage")
+    fr_history = {key: [] for key in fr_keys}
+    for i in range(len(years)):
+        at = lambda series: series[i] if i < len(series) else None
+        it_i, rt_i, pt_i = safe_div(at(cogs), at(inventory)), safe_div(at(revenue), at(receivables)), safe_div(at(cogs), at(payables))
+        vals = {
+            "cr": safe_div(at(bs["TS ngắn hạn"]), at(bs["Nợ NH"])),
+            "qr": safe_div(at(bs["TS ngắn hạn"]) - at(inventory) if at(bs["TS ngắn hạn"]) is not None and at(inventory) is not None else None, at(bs["Nợ NH"])),
+            "cash": safe_div(at(bs["Tiền"]), at(bs["Nợ NH"])), "it": it_i, "dio": safe_div(365, it_i),
+            "rt": rt_i, "dso": safe_div(365, rt_i), "pt": pt_i, "dpo": safe_div(365, pt_i),
+            "da": safe_div(at(bs["Nợ phải trả"]), at(bs["Tổng TS"])), "de": safe_div(at(bs["Nợ phải trả"]), at(bs["VCSH"])),
+            "roa": safe_div(at(net), at(bs["Tổng TS"])), "roe": safe_div(at(net), at(bs["VCSH"])),
+            "gpm": safe_div(at(gross), at(revenue)), "npm": safe_div(at(net), at(revenue)),
+            "at": safe_div(at(revenue), at(bs["Tổng TS"])), "leverage": safe_div(at(bs["Tổng TS"]), at(bs["VCSH"])),
+            "ic": safe_div((at(pretax) or 0) + (at(interest) or 0), at(interest)), "roic": None,
+        }
+        vals["ccc"] = vals["dio"] + vals["dso"] - vals["dpo"] if all(vals.get(k) is not None for k in ("dio", "dso", "dpo")) else None
+        for key in fr_keys: fr_history[key].append(vals.get(key))
+    fr = {key: (fr_history[key][-1] if fr_history[key] else None) for key in fr_keys}
+    fr["periodDays"] = 365
+    fr["note"] = "Tỷ số FR tự tính từ BCTC CafeF; ngày vòng quay dùng 365 ngày cho dữ liệu năm."
+    ratios.update({key: value for key, value in fr.items() if key in ("cr", "qr", "cash", "it", "dio", "rt", "dso", "pt", "dpo", "ccc", "da", "de", "ic", "at", "leverage") and value is not None})
     if len(revenue) >= 2 and revenue[-2] not in (None, 0) and revenue[-1] is not None:
         ratios["rg"] = (revenue[-1] / revenue[-2] - 1) * 100
     if len(net) >= 2 and net[-2] not in (None, 0) and net[-1] is not None:
@@ -693,7 +744,7 @@ async def build_cafef_fundamentals(symbol: str) -> dict[str, Any]:
         "years": years, "revenue": revenue, "netProfit": net,
         "margins": {"gpm": [None if revenue[i] in (None, 0) or gross[i] is None else gross[i] / revenue[i] * 100 for i in range(len(revenue))], "opm": [None] * len(revenue), "npm": [None if revenue[i] in (None, 0) or net[i] is None else net[i] / revenue[i] * 100 for i in range(len(revenue))]},
         "balanceSheet": bs, "incomeStatement": is_data, "cashFlow": cash, "fcfSeries": fcf_series, "fcf": fcf_series[-1] if fcf_series else None, "ebitda": None,
-        "ratios": ratios, "sectorAvg": {"pe": historical_pe, "pb": historical_pb, "ev": None, "roe": None, "npm": None, "de": None},
+        "ratios": ratios, "fr": fr, "frHistory": fr_history, "sectorAvg": {"pe": historical_pe, "pb": historical_pb, "ev": None, "roe": None, "npm": None, "de": None},
         "sectorAvgLabel": "Trung vị PE/PB lịch sử 3 năm (đã lọc ngoại lệ)" if historical_pe is not None or historical_pb is not None else "Chưa có mốc tham chiếu lịch sử",
         "health": health, "quality": health_total, "peers": [], "strengths": [], "risks": [],
         "note": "Phân tích dùng BCTC và chỉ số do CafeF cung cấp; các chỉ tiêu CafeF không trả về được giữ là chưa có dữ liệu.",
