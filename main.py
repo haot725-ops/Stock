@@ -1,7 +1,7 @@
 """
 VN Stock Analyst API
 FastAPI backend — dữ liệu giá từ nguồn công khai (DNSE chart, CafeF).
-BCTC/ratios: dùng dữ liệu mẫu chất lượng cao + cấu trúc sẵn sàng gắn nguồn thật.
+ BCTC/ratios: lấy và chuẩn hóa từ endpoint CafeF theo mã, không fallback sang dữ liệu mẫu.
 """
 
 from __future__ import annotations
@@ -476,6 +476,177 @@ async def fetch_vps_board(symbols: list[str]) -> list[dict]:
 
 
 # ---------------------------------------------------------------------------
+# CafeF financial statements (the same JSON endpoints used by CafeF's page)
+# ---------------------------------------------------------------------------
+
+CAFEEF_BCTC_URL = "https://apiweb.cafef.vn/api/v1/BCTC/GetReportSummary"
+CAFEEF_INDICATORS_URL = "https://apiweb.cafef.vn/api/v2/BCTC/FinancialIndicators"
+
+
+async def _cafef_json(url: str) -> dict[str, Any]:
+    async with httpx.AsyncClient(timeout=20.0, headers={**HEADERS, "Referer": "https://cafef.vn/"}) as client:
+        response = await client.get(url)
+        response.raise_for_status()
+        payload = response.json()
+    if not isinstance(payload, dict) or payload.get("isSuccess") is False:
+        raise ValueError("CafeF trả phản hồi không hợp lệ")
+    return payload
+
+
+async def fetch_cafef_report(symbol: str, report_type: str, type_time: str = "NAM") -> tuple[list[dict[str, Any]], dict[str, str]]:
+    """Fetch all available annual/quarterly periods and preserve CafeF labels."""
+    symbol = symbol.upper().strip()
+    rows: list[dict[str, Any]] = []
+    labels: dict[str, str] = {}
+    for page in range(1, 12):
+        url = (
+            f"{CAFEEF_BCTC_URL}?symbol={symbol}&pageIndex={page}&pageSize=4"
+            f"&reportType={report_type}&TypeTime={type_time}"
+        )
+        payload = await _cafef_json(url)
+        value = payload.get("value") or {}
+        for template in value.get("templace") or []:
+            for item in template.get("data") or []:
+                if item.get("code") and item.get("name"):
+                    labels[item["code"]] = item["name"]
+        page_rows = []
+        for group in value.get("data") or []:
+            page_rows.extend(group.get("data") or [])
+        if not page_rows:
+            break
+        rows.extend(page_rows)
+        if len(rows) >= int(value.get("count") or 0):
+            break
+    # Never accept a response whose company identity does not match the request.
+    if rows and any(str(row.get("symbol", "")).upper() != symbol for row in rows):
+        raise ValueError(f"CafeF trả sai mã cho yêu cầu {symbol}")
+    return rows, labels
+
+
+async def fetch_cafef_indicators(symbol: str) -> tuple[list[dict[str, Any]], dict[str, str]]:
+    symbol = symbol.upper().strip()
+    payload = await _cafef_json(f"{CAFEEF_INDICATORS_URL}?symbol={symbol}&pageIndex=1&pageSize=100")
+    value = payload.get("value") or {}
+    rows = value.get("data") or []
+    if rows and any(str(row.get("symbol", "")).upper() != symbol for row in rows):
+        raise ValueError(f"CafeF trả sai mã chỉ số cho yêu cầu {symbol}")
+    labels = {x.get("code"): x.get("name") for x in value.get("templace") or [] if x.get("code")}
+    return rows, labels
+
+
+def _cafef_value(row: dict[str, Any], code: str) -> Optional[float]:
+    for item in row.get("data") or []:
+        if item.get("code") == code:
+            value = item.get("value")
+            try:
+                return None if value in (None, "") else float(value)
+            except (TypeError, ValueError):
+                return None
+    return None
+
+
+def _code_by_name(labels: dict[str, str], *terms: str) -> Optional[str]:
+    for code, name in labels.items():
+        text = str(name).lower()
+        if all(term.lower() in text for term in terms):
+            return code
+    return None
+
+
+def _series(rows: list[dict[str, Any]], labels: dict[str, str], *terms: str) -> list[Optional[float]]:
+    code = _code_by_name(labels, *terms)
+    return [None if code is None else (_cafef_value(row, code) / 1_000_000_000 if _cafef_value(row, code) is not None else None) for row in rows]
+
+
+def _latest_indicator(rows: list[dict[str, Any]], code: str) -> Optional[float]:
+    if not rows:
+        return None
+    return _cafef_value(rows[0], code)
+
+
+async def build_cafef_fundamentals(symbol: str) -> dict[str, Any]:
+    """Normalize CafeF's verified symbol-specific data to the frontend contract."""
+    symbol = symbol.upper().strip()
+    income, income_labels = await fetch_cafef_report(symbol, "KQKD", "NAM")
+    balance, balance_labels = await fetch_cafef_report(symbol, "CDKT", "NAM")
+    indicators, _ = await fetch_cafef_indicators(symbol)
+    if not income or not balance:
+        raise ValueError(f"CafeF chưa có đủ BCTC cho {symbol}")
+
+    income = sorted(income, key=lambda row: int(row.get("year") or 0))[-3:]
+    balance = sorted(balance, key=lambda row: int(row.get("year") or 0))[-3:]
+    years = [int(row.get("year")) for row in income]
+    revenue = _series(income, income_labels, "doanh thu thuần")
+    if all(value is None for value in revenue):
+        # Banks do not report a manufacturing-style net revenue line.
+        revenue = _series(income, income_labels, "thu nhập lãi thuần")
+    if all(value is None for value in revenue):
+        revenue = _series(income, income_labels, "tổng thu nhập hoạt động")
+    cogs = _series(income, income_labels, "giá vốn hàng bán")
+    gross = _series(income, income_labels, "lợi nhuận gộp")
+    operating = _series(income, income_labels, "lợi nhuận thuần từ hoạt động kinh doanh")
+    pretax = _series(income, income_labels, "tổng lợi nhuận kế toán trước thuế")
+    net = _series(income, income_labels, "lợi nhuận sau thuế")
+
+    bs = {
+        "Tiền": _series(balance, balance_labels, "tiền và các khoản tương đương tiền"),
+        "TS ngắn hạn": _series(balance, balance_labels, "tài sản ngắn hạn"),
+        "TS dài hạn": _series(balance, balance_labels, "tài sản dài hạn"),
+        "Tổng TS": _series(balance, balance_labels, "tổng cộng tài sản"),
+        "Nợ NH": _series(balance, balance_labels, "nợ ngắn hạn"),
+        "Nợ phải trả": _series(balance, balance_labels, "tổng cộng nợ phải trả"),
+        "VCSH": _series(balance, balance_labels, "vốn chủ sở hữu"),
+    }
+    is_data = {
+        "DT thuần": revenue, "GVHB": cogs, "LN gộp": gross,
+        "LN HĐKD": operating, "LNTT": pretax, "LNST": net,
+    }
+    latest = indicators[0] if indicators else {}
+    raw = {code: _latest_indicator(indicators, code) for code in ("EPS", "PE", "PB", "GOS", "ROS", "ROE", "ROA", "TSTTHH", "KNTTLV", "DAR")}
+    clean = lambda value: None if value in (None, 0) else value
+    total_assets = bs["Tổng TS"][-1] if bs["Tổng TS"] else None
+    liabilities = bs["Nợ phải trả"][-1] if bs["Nợ phải trả"] else None
+    equity = bs["VCSH"][-1] if bs["VCSH"] else None
+    current_assets = bs["TS ngắn hạn"][-1] if bs["TS ngắn hạn"] else None
+    current_liabilities = bs["Nợ NH"][-1] if bs["Nợ NH"] else None
+    de = liabilities / equity if liabilities is not None and equity else None
+    da = liabilities / total_assets if liabilities is not None and total_assets else None
+    cr = current_assets / current_liabilities if current_assets is not None and current_liabilities else None
+    ratios = {
+        "roe": clean(raw["ROE"]), "roa": clean(raw["ROA"]), "npm": clean(raw["ROS"]),
+        "gpm": clean(raw["GOS"]), "opm": None, "cr": cr, "qr": None, "cash": None,
+        "de": de, "ic": clean(raw["KNTTLV"]), "da": da, "at": None, "it": None, "rt": None,
+        "pe": clean(raw["PE"]), "pb": clean(raw["PB"]), "ps": None, "ev": None, "peg": None,
+        "dy": None, "fy": None, "rg": None, "ng": None, "eg": None,
+    }
+    if len(revenue) >= 2 and revenue[-2] not in (None, 0) and revenue[-1] is not None:
+        ratios["rg"] = (revenue[-1] / revenue[-2] - 1) * 100
+    if len(net) >= 2 and net[-2] not in (None, 0) and net[-1] is not None:
+        ratios["ng"] = (net[-1] / net[-2] - 1) * 100
+    for key in ("gpm", "npm"):
+        if ratios[key] is None:
+            source = gross if key == "gpm" else net
+            if source[-1] is not None and revenue[-1]: ratios[key] = source[-1] / revenue[-1] * 100
+    for key in ("roe", "roa"):
+        if ratios[key] is None:
+            ratios[key] = None
+    roe_score = ratios["roe"]
+    health_total = round(max(0, min(100, 50 + (roe_score or 0) * 1.2 - (de or 0) * 8)))
+    health = {"total": health_total, "liq": 50 if cr is None else round(max(0, min(100, cr * 40))), "prof": round(max(0, min(100, 50 + (ratios["npm"] or 0) * 1.5))), "lev": round(max(0, min(100, 100 - (de or 0) * 25))), "eff": 50}
+    return {
+        "symbol": symbol, "name": f"Mã {symbol}", "sector": "Chưa xác định", "exchange": "",
+        "shares": None, "years": years, "revenue": revenue, "netProfit": net,
+        "margins": {"gpm": [None if revenue[i] in (None, 0) or gross[i] is None else gross[i] / revenue[i] * 100 for i in range(len(revenue))], "opm": [None] * len(revenue), "npm": [None if revenue[i] in (None, 0) or net[i] is None else net[i] / revenue[i] * 100 for i in range(len(revenue))]},
+        "balanceSheet": bs, "incomeStatement": is_data, "fcf": None, "ebitda": None,
+        "ratios": ratios, "sectorAvg": {"pe": None, "pb": None, "ev": None, "roe": None, "npm": None, "de": None},
+        "health": health, "quality": health_total, "peers": [], "strengths": [], "risks": [],
+        "note": "Phân tích dùng BCTC và chỉ số do CafeF cung cấp; các chỉ tiêu CafeF không trả về được giữ là chưa có dữ liệu.",
+        "hasFundamentals": True, "source": "cafef", "sourceUrl": "https://cafef.vn/du-lieu/hose/" + symbol.lower() + "-tai-chinh.chn",
+        "retrievedAt": datetime.now().isoformat(), "currency": "VND", "unit": "tỷ đồng",
+    }
+
+
+# ---------------------------------------------------------------------------
 # Routes
 # ---------------------------------------------------------------------------
 
@@ -516,7 +687,7 @@ async def health():
 async def list_symbols():
     return {
         "symbols": sorted(SAMPLE_DB.keys()),
-        "note": "Danh sách mã có dữ liệu phân tích đầy đủ (BCTC mẫu). Giá realtime hỗ trợ hầu hết mã HOSE/HNX qua DNSE/CafeF/VPS.",
+        "note": "Danh sách mã phân tích lấy theo CafeF; giá realtime hỗ trợ hầu hết mã HOSE/HNX qua DNSE/CafeF/VPS.",
     }
 
 
@@ -628,48 +799,31 @@ async def stock_ohlcv(symbol: str, days: int = Query(90, ge=5, le=730)):
 @app.get("/api/stock/{symbol}/financials")
 async def stock_financials(symbol: str):
     symbol = symbol.upper().strip()
-    data = SAMPLE_DB.get(symbol)
-    if not data:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Chưa có BCTC mẫu cho {symbol}. Hiện hỗ trợ: {', '.join(sorted(SAMPLE_DB))}",
-        )
-    return {
-        "symbol": symbol,
-        "years": data["years"],
-        "balanceSheet": data["bs"],
-        "incomeStatement": data["is"],
-        "revenue": data["revenue"],
-        "netProfit": data["netProfit"],
-        "margins": data["margins"],
-        "fcf": data.get("fcf"),
-        "ebitda": data.get("ebitda"),
-        "source": "sample",
-        "note": "BCTC hiện là dữ liệu mẫu. Gắn Vnstock/TCBS key để lấy số liệu thật.",
-    }
+    try:
+        data = await build_cafef_fundamentals(symbol)
+        return {"symbol": symbol, "years": data["years"], "balanceSheet": data["balanceSheet"], "incomeStatement": data["incomeStatement"], "revenue": data["revenue"], "netProfit": data["netProfit"], "margins": data["margins"], "fcf": data["fcf"], "ebitda": data["ebitda"], "source": data["source"], "sourceUrl": data["sourceUrl"], "retrievedAt": data["retrievedAt"], "unit": data["unit"]}
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Không lấy được BCTC CafeF cho {symbol}: {exc}")
 
 
 @app.get("/api/stock/{symbol}/ratios")
 async def stock_ratios(symbol: str):
     symbol = symbol.upper().strip()
-    data = SAMPLE_DB.get(symbol)
-    if not data:
-        raise HTTPException(status_code=404, detail=f"Chưa có ratios cho {symbol}")
-    return {
-        "symbol": symbol,
-        "ratios": data["ratios"],
-        "sectorAvg": data["sectorAvg"],
-        "health": data["health"],
-        "quality": data["quality"],
-        "source": "sample",
-    }
+    try:
+        data = await build_cafef_fundamentals(symbol)
+        return {"symbol": symbol, "ratios": data["ratios"], "sectorAvg": data["sectorAvg"], "health": data["health"], "quality": data["quality"], "source": data["source"], "sourceUrl": data["sourceUrl"], "retrievedAt": data["retrievedAt"]}
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Không lấy được chỉ số CafeF cho {symbol}: {exc}")
 
 
 @app.get("/api/stock/{symbol}")
 async def stock_full(symbol: str):
     """Payload đầy đủ cho frontend phân tích."""
     symbol = symbol.upper().strip()
-    fund = SAMPLE_DB.get(symbol)
+    try:
+        fund = await build_cafef_fundamentals(symbol)
+    except Exception:
+        fund = None
 
     quote = None
     try:
@@ -683,22 +837,17 @@ async def stock_full(symbol: str):
         raise HTTPException(status_code=404, detail=f"Không có dữ liệu cho {symbol}")
 
     if not fund:
-        # Chỉ có giá, không có phân tích sâu
         return {
             "symbol": symbol,
             "quote": quote,
             "hasFundamentals": False,
-            "message": "Chỉ có dữ liệu giá. BCTC/ratios chưa sẵn cho mã này.",
+            "message": "Chỉ có dữ liệu giá. Chưa lấy được BCTC CafeF đã xác minh cho mã này.",
         }
 
     price = (quote or {}).get("price")
     change = (quote or {}).get("changePercent")
 
-    # cập nhật P/E gần đúng nếu có giá thật và EPS ước từ sample
     ratios = dict(fund["ratios"])
-    if price and ratios.get("pe"):
-        # giữ nguyên ratios mẫu; frontend có thể tự tính lại
-        pass
 
     return {
         "symbol": symbol,
@@ -717,8 +866,8 @@ async def stock_full(symbol: str):
         "revenue": fund["revenue"],
         "netProfit": fund["netProfit"],
         "margins": fund["margins"],
-        "balanceSheet": fund["bs"],
-        "incomeStatement": fund["is"],
+        "balanceSheet": fund["balanceSheet"],
+        "incomeStatement": fund["incomeStatement"],
         "fcf": fund.get("fcf"),
         "ebitda": fund.get("ebitda"),
         "peers": fund.get("peers", []),
@@ -728,8 +877,13 @@ async def stock_full(symbol: str):
         "hasFundamentals": True,
         "sources": {
             "price": (quote or {}).get("source"),
-            "fundamentals": "sample",
+            "fundamentals": fund.get("source"),
         },
+        "source": fund.get("source"),
+        "sourceUrl": fund.get("sourceUrl"),
+        "retrievedAt": fund.get("retrievedAt"),
+        "currency": fund.get("currency"),
+        "unit": fund.get("unit"),
     }
 
 

@@ -358,7 +358,7 @@ Giá tính bằng nghìn đồng, biên độ HOSE ±7%. Chấm vàng cạnh mã
 </div>
 <details id="srcBox" class="card p-4">
 <summary class="cursor-pointer text-sm font-semibold">Nguồn giá trực tuyến<span id="srcState" class="ml-2 text-[11px] font-normal text-slate-500">VPS miễn phí · chưa lấy dữ liệu</span></summary>
-<p class="text-xs text-slate-500 mt-2 mb-3">Mặc định app dùng bảng giá công khai VPS, không cần khoá: giá khớp, tham chiếu, trần/sàn, khối lượng và dư mua/bán cho toàn bộ mã HOSE, HNX và UPCOM. Danh sách mã được tải từ WiFeed rồi gửi VPS theo các lô nhỏ để tránh giới hạn URL. Giá dùng đơn vị nghìn đồng. BCTC/ratios của app vẫn là dữ liệu mẫu, chưa được thay thế bằng số liệu thật.</p>
+<p class="text-xs text-slate-500 mt-2 mb-3">Mặc định app dùng bảng giá công khai VPS, không cần khoá: giá khớp, tham chiếu, trần/sàn, khối lượng và dư mua/bán cho toàn bộ mã HOSE, HNX và UPCOM. Danh sách mã được tải từ WiFeed rồi gửi VPS theo các lô nhỏ để tránh giới hạn URL. Tab phân tích lấy BCTC và chỉ số theo mã từ CafeF; chỉ tiêu thiếu sẽ để trống, không thay bằng số liệu mẫu.</p>
 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
 <label class="block text-xs text-slate-400">Địa chỉ nguồn (URL)<input id="srcUrl" type="url" inputmode="url" placeholder="https://…" class="mt-1 w-full bg-slate-800/80 border border-slate-700 rounded-xl py-2 px-3 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-slate-600"/></label>
 <label class="block text-xs text-slate-400">Khoá truy cập (nếu có)<input id="srcKey" type="password" autocomplete="off" class="mt-1 w-full bg-slate-800/80 border border-slate-700 rounded-xl py-2 px-3 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"/></label>
@@ -480,13 +480,24 @@ window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();dp=e;docume
 document.getElementById("installBtn")?.addEventListener("click",async()=>{if(!dp)return;dp.prompt();await dp.userChoice;dp=null;document.getElementById("installBanner").classList.add("hidden");});
 document.getElementById("dismissInstall")?.addEventListener("click",()=>document.getElementById("installBanner").classList.add("hidden"));
 
-function render(tk){
-showView("analyze",{keepScroll:1});
-const d=DB[tk.toUpperCase()];if(!d){toast("Mã "+tk.toUpperCase()+" chưa có báo cáo tài chính. Có sẵn: "+Object.keys(DB).join(" ")+". Thêm mã ở tab Nhập dữ liệu.");return;}
-document.getElementById("emptyState").classList.add("hidden");try{localStorage.setItem("vsa.last",tk.toUpperCase());}catch(e){}
-document.getElementById("loadingState").classList.remove("hidden");
-document.getElementById("dashboard").classList.add("hidden");
-setTimeout(()=>{
+	async function render(tk){
+	showView("analyze",{keepScroll:1});
+	const symbol=tk.toUpperCase();
+	document.getElementById("emptyState").classList.add("hidden");try{localStorage.setItem("vsa.last",symbol);}catch(e){}
+	document.getElementById("loadingState").classList.remove("hidden");
+	document.getElementById("dashboard").classList.add("hidden");
+	let d;
+	try{
+		const response=await fetch(`/api/stock/${encodeURIComponent(symbol)}`);
+		const payload=await response.json();
+		if(!response.ok||!payload.hasFundamentals)throw new Error(payload.message||"Chưa có BCTC CafeF xác minh cho mã này");
+		d={...payload,t:payload.symbol,sec:payload.sector||"Chưa xác định",ex:payload.exchange||"—",price:payload.price,chg:payload.changePercent||0,mcap:payload.marketCap,sh:payload.shares,h:{t:payload.health?.total||0,l:payload.health?.liq||0,p:payload.health?.prof||0,v:payload.health?.lev||0,e:payload.health?.eff||0},q:payload.quality||0,r:payload.ratios||{},sa:payload.sectorAvg||{},ys:payload.years||[],rev:payload.revenue||[],np:payload.netProfit||[],m:payload.margins||{},bs:payload.balanceSheet||{},is:payload.incomeStatement||{},str:payload.strengths||[],rsk:payload.risks||{}};
+	}catch(error){
+		document.getElementById("loadingState").classList.add("hidden");
+		toast(error.message||"Không lấy được dữ liệu BCTC CafeF");
+		return;
+	}
+	setTimeout(()=>{
 document.getElementById("loadingState").classList.add("hidden");
 document.getElementById("dashboard").classList.remove("hidden");
 dc();
@@ -496,27 +507,28 @@ document.getElementById("cname").textContent=d.name;
 document.getElementById("cticker").textContent=d.t;
 document.getElementById("csector").textContent=d.sec;
 document.getElementById("cexch").textContent=d.ex;
-document.getElementById("cmcap").textContent=d.mcap.toFixed(1)+" nghìn tỷ";
-document.getElementById("cshares").textContent=d.sh.toLocaleString("vi-VN")+" tr cp";
+	document.getElementById("cmcap").textContent=d.mcap!=null?d.mcap.toFixed(1)+" nghìn tỷ":"—";
+	document.getElementById("cshares").textContent=d.sh!=null?d.sh.toLocaleString("vi-VN")+" tr cp":"—";
 document.getElementById("cprice").textContent=fp(d.price);
 const ch=document.getElementById("cchange");ch.textContent=(d.chg>=0?"+":"")+d.chg.toFixed(2)+"%";ch.className="text-sm font-medium "+(d.chg>=0?"text-emerald-400":"text-rose-400");
 const gr=d.h.t>=85?"A":d.h.t>=75?"B+":d.h.t>=65?"B":d.h.t>=55?"C":"D";
 const ge=document.getElementById("grade");ge.textContent="Hạng "+gr;ge.className="px-2 py-0.5 text-xs font-bold rounded-md "+(gr[0]==="A"?"g":gr[0]==="B"?"w":"b");
 document.getElementById("hScore").textContent=d.h.t;document.getElementById("hBar").style.width=d.h.t+"%";
 document.getElementById("qScore").textContent=d.q;document.getElementById("qBar").style.width=d.q+"%";
-const up=((sa.pe/r.pe)-1)*100;
+	const up=sa.pe!=null&&r.pe!=null?((sa.pe/r.pe)-1)*100:null;
 const ve=document.getElementById("vVerdict");
-if(up>15){ve.textContent="Hấp dẫn";ve.className="text-lg font-bold text-emerald-400";}
-else if(up>-10){ve.textContent="Hợp lý";ve.className="text-lg font-bold text-amber-400";}
-else{ve.textContent="Đắt";ve.className="text-lg font-bold text-rose-400";}
-document.getElementById("vSub").textContent="P/E "+r.pe.toFixed(1)+"x vs ngành "+sa.pe.toFixed(1)+"x";
-const cR=(Math.pow(d.rev[2]/d.rev[0],.5)-1)*100,cN=(Math.pow(d.np[2]/d.np[0],.5)-1)*100;
-const gv=document.getElementById("gVerdict");gv.textContent=(cR>=0?"+":"")+cR.toFixed(1)+"%";gv.className="text-lg font-bold "+(cR>=10?"text-emerald-400":cR>=0?"text-amber-400":"text-rose-400");
+	if(up==null){ve.textContent="Chưa đủ dữ liệu";ve.className="text-lg font-bold text-slate-400";}
+	else if(up>15){ve.textContent="Hấp dẫn";ve.className="text-lg font-bold text-emerald-400";}
+	else if(up>-10){ve.textContent="Hợp lý";ve.className="text-lg font-bold text-amber-400";}
+	else{ve.textContent="Đắt";ve.className="text-lg font-bold text-rose-400";}
+	document.getElementById("vSub").textContent="P/E "+(r.pe==null?"—":r.pe.toFixed(1))+"x vs ngành "+(sa.pe==null?"—":sa.pe.toFixed(1))+"x";
+	const cR=d.rev.length>=3&&d.rev[0]>0&&d.rev[2]!=null?(Math.pow(d.rev[2]/d.rev[0],.5)-1)*100:null,cN=d.np.length>=3&&d.np[0]>0&&d.np[2]!=null?(Math.pow(d.np[2]/d.np[0],.5)-1)*100:null;
+	const gv=document.getElementById("gVerdict");gv.textContent=cR==null?"—":(cR>=0?"+":"")+cR.toFixed(1)+"%";gv.className="text-lg font-bold "+(cR==null?"text-slate-400":cR>=10?"text-emerald-400":cR>=0?"text-amber-400":"text-rose-400");
 document.getElementById("strengths").innerHTML=d.str.map(s=>`<li class="flex gap-2"><span class="text-emerald-400">✓</span><span class="text-slate-300">${s}</span></li>`).join("");
 document.getElementById("risks").innerHTML=d.rsk.map(s=>`<li class="flex gap-2"><span class="text-rose-400">!</span><span class="text-slate-300">${s}</span></li>`).join("");
-document.getElementById("cagrR").textContent=(cR>=0?"+":"")+cR.toFixed(1)+"%";
-document.getElementById("cagrN").textContent=(cN>=0?"+":"")+cN.toFixed(1)+"%";
-document.getElementById("avgR").textContent=r.roe.toFixed(1)+"%";
+	document.getElementById("cagrR").textContent=cR==null?"—":(cR>=0?"+":"")+cR.toFixed(1)+"%";
+	document.getElementById("cagrN").textContent=cN==null?"—":(cN>=0?"+":"")+cN.toFixed(1)+"%";
+	document.getElementById("avgR").textContent=r.roe==null?"—":r.roe.toFixed(1)+"%";
 document.getElementById("fcfY").textContent=r.fy!=null?r.fy.toFixed(1)+"%":"—";
 document.getElementById("note").textContent=d.note;
 // ratios
@@ -536,22 +548,22 @@ document.getElementById("dpI").textContent=npm>.12&&at>1.2?"ROE cao nhờ biên 
 // tables
 ft("bsT",d.bs);ft("isT",d.is);
 // val
-document.getElementById("vPE").textContent=r.pe.toFixed(1);document.getElementById("vPB").textContent=r.pb.toFixed(2);
-document.getElementById("vEV").textContent=r.ev!=null?r.ev.toFixed(1):"—";document.getElementById("vPG").textContent=r.peg.toFixed(2);
-document.getElementById("sPE").textContent=sa.pe.toFixed(1)+"x";document.getElementById("sPB").textContent=sa.pb.toFixed(2)+"x";document.getElementById("sEV").textContent=sa.ev!=null?sa.ev.toFixed(1)+"x":"—";
-const eps=d.price/r.pe,bv=d.price/r.pb,fpe=Math.round(eps*sa.pe),fpb=Math.round(bv*sa.pb);
-let fev=null;if(r.ev&&sa.ev&&d.ebitda)fev=Math.round(d.ebitda*sa.ev/d.sh*1000);
-const vs=[fpe,fpb,fev].filter(v=>v!=null),fa=Math.round(vs.reduce((a,b)=>a+b,0)/vs.length),up2=(((fa-d.price)/d.price)*100).toFixed(1);
-document.getElementById("fPE").textContent=fp(fpe);document.getElementById("fPB").textContent=fp(fpb);document.getElementById("fEV").textContent=fev!=null?fp(fev):"—";
-document.getElementById("fAvg").textContent=fp(fa);
-const ue=document.getElementById("ups");ue.textContent=(up2>=0?"+":"")+up2+"%";ue.className="font-semibold "+(up2>=0?"text-emerald-400":"text-rose-400");
+	document.getElementById("vPE").textContent=r.pe==null?"—":r.pe.toFixed(1);document.getElementById("vPB").textContent=r.pb==null?"—":r.pb.toFixed(2);
+	document.getElementById("vEV").textContent=r.ev!=null?r.ev.toFixed(1):"—";document.getElementById("vPG").textContent=r.peg==null?"—":r.peg.toFixed(2);
+	document.getElementById("sPE").textContent=sa.pe==null?"—":sa.pe.toFixed(1)+"x";document.getElementById("sPB").textContent=sa.pb==null?"—":sa.pb.toFixed(2)+"x";document.getElementById("sEV").textContent=sa.ev!=null?sa.ev.toFixed(1)+"x":"—";
+	const eps=d.price&&r.pe?d.price/r.pe:null,bv=d.price&&r.pb?d.price/r.pb:null,fpe=eps&&sa.pe?Math.round(eps*sa.pe):null,fpb=bv&&sa.pb?Math.round(bv*sa.pb):null;
+	let fev=null;if(r.ev&&sa.ev&&d.ebitda&&d.sh)fev=Math.round(d.ebitda*sa.ev/d.sh*1000);
+	const vs=[fpe,fpb,fev].filter(v=>Number.isFinite(v)),fa=vs.length?Math.round(vs.reduce((a,b)=>a+b,0)/vs.length):null,up2=fa!=null&&d.price?(((fa-d.price)/d.price)*100).toFixed(1):null;
+	document.getElementById("fPE").textContent=fpe!=null?fp(fpe):"—";document.getElementById("fPB").textContent=fpb!=null?fp(fpb):"—";document.getElementById("fEV").textContent=fev!=null?fp(fev):"—";
+	document.getElementById("fAvg").textContent=fa!=null?fp(fa):"—";
+	const ue=document.getElementById("ups");ue.textContent=up2==null?"—":(up2>=0?"+":"")+up2+"%";ue.className="font-semibold "+(up2==null?"text-slate-400":up2>=0?"text-emerald-400":"text-rose-400");
 if(d.fcf){const tv=d.fcf*1.05/.06;document.getElementById("fcf").textContent=fmt(d.fcf)+" tỷ";document.getElementById("tv").textContent=(tv/1000).toFixed(1)+" nghìn tỷ";document.getElementById("dcf").textContent=fp(Math.round(tv/d.sh*1000));}
 else{document.getElementById("fcf").textContent="—";document.getElementById("tv").textContent="—";document.getElementById("dcf").textContent="—";}
 sens(d);peers(d);risk(d);charts(d);tab("ov");tuneInit(d);aiDraw(d.t);
 },500);
 }
 
-function ft(id,obj){const tb=document.getElementById(id);tb.innerHTML="";for(const[l,v]of Object.entries(obj)){if(v.every(x=>x===0))continue;const y=v[1]!==0?((v[2]-v[1])/Math.abs(v[1])*100):0;const c=y>=0?"text-emerald-400":"text-rose-400";const tr=document.createElement("tr");tr.className="hover:bg-slate-800/30";tr.innerHTML=`<td class="py-2 text-slate-300">${l}</td><td class="py-2 text-right font-medium stat">${fmt(v[0])}</td><td class="py-2 text-right font-medium stat">${fmt(v[1])}</td><td class="py-2 text-right font-medium stat text-indigo-300">${fmt(v[2])}</td><td class="py-2 text-right text-xs ${c}">${y>=0?"+":""}${y.toFixed(1)}%</td>`;tb.appendChild(tr);}}
+function ft(id,obj){const tb=document.getElementById(id);tb.innerHTML="";for(const[l,v]of Object.entries(obj)){if(!Array.isArray(v)||v.every(x=>x==null||x===0))continue;const y=v[1]!=null&&v[2]!=null&&v[1]!==0?((v[2]-v[1])/Math.abs(v[1])*100):null;const c=y==null?"text-slate-500":y>=0?"text-emerald-400":"text-rose-400";const tr=document.createElement("tr");tr.className="hover:bg-slate-800/30";tr.innerHTML=`<td class="py-2 text-slate-300">${l}</td><td class="py-2 text-right font-medium stat">${fmt(v[0])}</td><td class="py-2 text-right font-medium stat">${fmt(v[1])}</td><td class="py-2 text-right font-medium stat text-indigo-300">${fmt(v[2])}</td><td class="py-2 text-right text-xs ${c}">${y==null?"—":(y>=0?"+":"")+y.toFixed(1)+"%"}</td>`;tb.appendChild(tr);}}
 
 function sens(d){if(!d.fcf){document.querySelector("#sensT thead").innerHTML="";document.querySelector("#sensT tbody").innerHTML='<tr><td class="text-slate-500 text-sm py-3">Không đủ FCF</td></tr>';return;}
 const ws=[.09,.1,.11,.12,.13],gs=[.03,.04,.05,.06,.07];let h='<tr class="text-slate-500"><th class="py-1.5 px-2 text-left">WACC\\g</th>';gs.forEach(g=>h+=`<th class="py-1.5 px-2 text-right">${(g*100).toFixed(0)}%</th>`);h+="</tr>";
@@ -562,15 +574,15 @@ document.querySelector("#sensT tbody").innerHTML=b;}
 function peers(d){document.getElementById("prT").innerHTML=d.peers.map(p=>{const s=p.t===d.t;return`<tr class="${s?"bg-indigo-600/10":"hover:bg-slate-800/30"}"><td class="py-2 font-semibold ${s?"text-indigo-300":""}">${p.t}${s?" ★":""}</td><td class="py-2 text-right stat">${p.pe.toFixed(1)}</td><td class="py-2 text-right stat">${p.pb.toFixed(2)}</td><td class="py-2 text-right stat">${p.roe.toFixed(1)}</td><td class="py-2 text-right stat">${p.de.toFixed(2)}</td><td class="py-2 text-right stat">${p.npm.toFixed(1)}</td><td class="py-2 text-right font-semibold ${p.h>=80?"text-emerald-400":p.h>=65?"text-amber-400":"text-rose-400"}">${p.h}</td></tr>`;}).join("");}
 
 function risk(d){const r=d.r;const mk=(t,l)=>`<div class="flex items-center justify-between"><span class="text-slate-300">${t}</span><span class="text-[10px] px-1.5 py-0.5 rounded ${l==="l"?"g":l==="m"?"w":"b"}">${l==="l"?"Thấp":l==="m"?"TB":"Cao"}</span></div>`;
-const f=[];if(r.de>1)f.push(mk("D/E cao ("+r.de.toFixed(2)+"x)","h"));else if(r.de>.6)f.push(mk("D/E TB ("+r.de.toFixed(2)+"x)","m"));else f.push(mk("D/E thấp ("+r.de.toFixed(2)+"x)","l"));
+	const f=[];if(r.de==null)f.push(mk("D/E chưa có dữ liệu","m"));else if(r.de>1)f.push(mk("D/E cao ("+r.de.toFixed(2)+"x)","h"));else if(r.de>.6)f.push(mk("D/E TB ("+r.de.toFixed(2)+"x)","m"));else f.push(mk("D/E thấp ("+r.de.toFixed(2)+"x)","l"));
 if(r.ic!=null){if(r.ic<3)f.push(mk("Interest coverage thấp","h"));else if(r.ic<8)f.push(mk("Interest coverage ổn","m"));else f.push(mk("Interest coverage tốt","l"));}
-if(r.cr<1)f.push(mk("Current ratio <1","h"));else if(r.cr<1.5)f.push(mk("Thanh khoản vừa","m"));else f.push(mk("Thanh khoản tốt","l"));
-const o=[];if(r.rg<0)o.push(mk("Doanh thu giảm","h"));else if(r.rg<5)o.push(mk("Tăng trưởng DT chậm","m"));else o.push(mk("Tăng trưởng DT tốt","l"));
+	if(r.cr==null)f.push(mk("Thanh khoản chưa có dữ liệu","m"));else if(r.cr<1)f.push(mk("Current ratio <1","h"));else if(r.cr<1.5)f.push(mk("Thanh khoản vừa","m"));else f.push(mk("Thanh khoản tốt","l"));
+	const o=[];if(r.rg==null)o.push(mk("Tăng trưởng doanh thu chưa có dữ liệu","m"));else if(r.rg<0)o.push(mk("Doanh thu giảm","h"));else if(r.rg<5)o.push(mk("Tăng trưởng DT chậm","m"));else o.push(mk("Tăng trưởng DT tốt","l"));
 if(r.gpm!=null){if(r.gpm<15)o.push(mk("Biên gộp mỏng","h"));else if(r.gpm<25)o.push(mk("Biên gộp TB","m"));else o.push(mk("Biên gộp tốt","l"));}
 const q=[];if(d.fcf&&d.fcf>d.np[2]*.7)q.push(mk("FCF/LNST tốt","l"));else if(d.fcf)q.push(mk("FCF thấp hơn LNST","m"));else q.push(mk("Thiếu FCF","m"));
 if(r.roe>20)q.push(mk("ROE cao bền vững","l"));else if(r.roe>12)q.push(mk("ROE khá","m"));else q.push(mk("ROE thấp","h"));
 document.getElementById("rkF").innerHTML=f.join("");document.getElementById("rkO").innerHTML=o.join("");document.getElementById("rkQ").innerHTML=q.join("");
-const rs=Math.max(10,Math.min(90,100-d.q+(r.de>1?10:0)+(r.rg<0?10:0)));
+	const rs=Math.max(10,Math.min(90,100-d.q+(r.de>1?10:0)+(r.rg!=null&&r.rg<0?10:0)));
 document.getElementById("rkRing").style.strokeDashoffset=251.3-(rs/100)*251.3;
 document.getElementById("rkSc").textContent=Math.round(rs);
 document.getElementById("rkSum").textContent=rs<30?"Rủi ro thấp. Nền tảng TC vững chắc, chất lượng cao.":rs<50?"Rủi ro trung bình. Có điểm cần theo dõi nhưng tổng thể ổn định.":"Rủi ro đáng chú ý. Theo dõi chặt đòn bẩy, thanh khoản & tăng trưởng.";
@@ -583,7 +595,7 @@ const so={responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{col
 C.rev=new Chart(document.getElementById("chRev"),{type:"bar",data:{labels:d.ys.map(String),datasets:[{label:"Doanh thu",data:d.rev,backgroundColor:"rgba(99,102,241,.75)",borderRadius:4,borderSkipped:false},{label:"LNST",data:d.np,backgroundColor:"rgba(20,184,166,.75)",borderRadius:4,borderSkipped:false}]},options:so});
 C.mar=new Chart(document.getElementById("chMar"),{type:"line",data:{labels:d.ys.map(String),datasets:[{label:"GPM",data:d.m.g,borderColor:"#818cf8",tension:.3,fill:false,pointRadius:4},{label:"OPM",data:d.m.o,borderColor:"#2dd4bf",tension:.3,fill:false,pointRadius:4},{label:"NPM",data:d.m.n,borderColor:"#fbbf24",tension:.3,fill:false,pointRadius:4}].filter(x=>x.data.some(v=>v!=null))},options:so});
 const sa2=d.bs["TS ngắn hạn"][2]||d.bs["Tổng TS"][2]*.4,la2=d.bs["TS dài hạn"][2]||d.bs["Tổng TS"][2]*.6;
-C.st=new Chart(document.getElementById("chSt"),{type:"doughnut",data:{labels:["TS ngắn hạn","TS dài hạn","Nợ phải trả","VCSH"],datasets:[{data:[sa2,la2,d.bs["Nợ phải trả"][2],d.bs["VCSH"][2]],backgroundColor:["rgba(99,102,241,.85)","rgba(129,140,248,.55)","rgba(251,146,60,.7)","rgba(20,184,166,.85)"],borderWidth:0,hoverOffset:5}]},options:{responsive:true,maintainAspectRatio:false,cutout:"58%",plugins:{legend:{position:"bottom",labels:{color:tc,font:f,padding:10}}}}});
+	C.st=new Chart(document.getElementById("chSt"),{type:"doughnut",data:{labels:["TS ngắn hạn","TS dài hạn","Nợ phải trả","VCSH"],datasets:[{data:[sa2,la2,d.bs["Nợ phải trả"][2]||0,d.bs["VCSH"][2]||0],backgroundColor:["rgba(99,102,241,.85)","rgba(129,140,248,.55)","rgba(251,146,60,.7)","rgba(20,184,166,.85)"],borderWidth:0,hoverOffset:5}]},options:{responsive:true,maintainAspectRatio:false,cutout:"58%",plugins:{legend:{position:"bottom",labels:{color:tc,font:f,padding:10}}}}});
 C.dp=new Chart(document.getElementById("chDp"),{type:"bar",data:{labels:["Biên LN (%)","Vòng quay TS (×10)","Đòn bẩy (×)"],datasets:[{label:d.t,data:[d.r.npm,(d.r.at||1)*10,1/(1-(d.r.da||.3))],backgroundColor:"rgba(99,102,241,.8)",borderRadius:4},{label:"TB ngành",data:[d.sa.npm||10,12,1/(1-.4)],backgroundColor:"rgba(148,163,184,.4)",borderRadius:4}]},options:so});
 C.pr=new Chart(document.getElementById("chPr"),{type:"bar",data:{labels:d.peers.map(p=>p.t),datasets:[{label:"ROE %",data:d.peers.map(p=>p.roe),backgroundColor:"rgba(20,184,166,.75)",borderRadius:4},{label:"P/E",data:d.peers.map(p=>p.pe),backgroundColor:"rgba(99,102,241,.6)",borderRadius:4}]},options:so});
 C.rd=new Chart(document.getElementById("chRd"),{type:"radar",data:{labels:["Tăng trưởng","Sinh lời","Thanh khoản","Ổn định","Định giá","Dòng tiền"],datasets:[{label:d.t,data:[Math.min(100,d.h.e+5),d.h.p,d.h.l,d.h.v,Math.max(25,100-d.r.pe*2.5),d.fcf?80:50],backgroundColor:"rgba(99,102,241,.2)",borderColor:"rgba(99,102,241,.9)",pointBackgroundColor:"#6366f1",borderWidth:2},{label:"TB ngành",data:[60,58,65,62,55,58],backgroundColor:"rgba(148,163,184,.08)",borderColor:"rgba(148,163,184,.5)",pointBackgroundColor:"#94a3b8",borderWidth:1.5,borderDash:[4,4]}]},options:{responsive:true,maintainAspectRatio:false,scales:{r:{beginAtZero:true,max:100,ticks:{display:false},grid:{color:"rgba(51,65,85,.5)"},pointLabels:{color:tc,font:f}}},plugins:{legend:{labels:{color:tc,font:f}}}}});
