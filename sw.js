@@ -1,4 +1,4 @@
-const CACHE_NAME = 'vn-stock-analyst-v2';
+const CACHE_NAME = 'vn-stock-analyst-v3';
 const ASSETS = [
   './',
   './index.html',
