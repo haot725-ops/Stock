@@ -31,6 +31,7 @@ Mở trình duyệt: **http://localhost:8000**
 - Bảng giá realtime (VPS public feed): khớp, trần/sàn, dư mua/bán, khối ngoại
 - OHLCV lịch sử (DNSE), quote (CafeF/VPS)
 - Phân tích BCTC CafeF: ratios, DuPont, bảng LCTT, FCF và DCF khi đủ dữ liệu; FCF được tính bằng CFO cộng dòng chi mua sắm/xây dựng TSCĐ (CapEx, thường là số âm). Các điểm sức khỏe là điểm dẫn xuất, còn peer/EBITDA chỉ hiển thị khi có nguồn xác minh.
+- Định giá: khi CafeF có EPS/BVPS và VCSH, số cổ phiếu được suy ra theo công thức VCSH/BVPS và giao diện ghi rõ là ước tính; vốn hóa được suy ra từ giá thị trường và số cổ phiếu này. Khi chưa có dữ liệu trung bình ngành xác minh, mốc P/E/P/B dùng trung vị lịch sử 3 năm của chính doanh nghiệp, đã lọc P/E ngoại lệ, và được ghi rõ là “Trung vị lịch sử”, không phải trung bình ngành. DCF chỉ hiển thị giá/cp khi đồng thời có FCF và số cổ phiếu; thiếu đầu vào thì để trống.
 
 ## Mã có phân tích đầy đủ
 Toàn bộ mã có dữ liệu trên CafeF có thể được tra cứu; đã kiểm thử NVL, VNM, FPT, HPG, VCB và MWG.

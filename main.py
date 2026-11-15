@@ -645,13 +645,23 @@ async def build_cafef_fundamentals(symbol: str) -> dict[str, Any]:
         "LN HĐKD": operating, "LNTT": pretax, "LNST": net,
     }
     latest = indicators[0] if indicators else {}
-    raw = {code: _latest_indicator(indicators, code) for code in ("EPS", "PE", "PB", "GOS", "ROS", "ROE", "ROA", "TSTTHH", "KNTTLV", "DAR")}
+    raw = {code: _latest_indicator(indicators, code) for code in ("EPS", "BV", "PE", "PB", "GOS", "ROS", "ROE", "ROA", "TSTTHH", "KNTTLV", "DAR")}
+    indicator_history = {
+        code: [_cafef_value(row, code) for row in sorted(indicators, key=lambda item: int(item.get("year") or 0))[-3:]]
+        for code in ("EPS", "BV", "PE", "PB")
+    }
     clean = lambda value: None if value in (None, 0) else value
     total_assets = bs["Tổng TS"][-1] if bs["Tổng TS"] else None
     liabilities = bs["Nợ phải trả"][-1] if bs["Nợ phải trả"] else None
     equity = bs["VCSH"][-1] if bs["VCSH"] else None
     current_assets = bs["TS ngắn hạn"][-1] if bs["TS ngắn hạn"] else None
     current_liabilities = bs["Nợ NH"][-1] if bs["Nợ NH"] else None
+    bvps = raw["BV"]
+    shares = equity * 1000 / bvps if equity is not None and bvps not in (None, 0) else None
+    valid_pe = [value for value in indicator_history["PE"] if value is not None and 0 < value < 100]
+    valid_pb = [value for value in indicator_history["PB"] if value is not None and value > 0]
+    historical_pe = sorted(valid_pe)[len(valid_pe) // 2] if valid_pe else None
+    historical_pb = sorted(valid_pb)[len(valid_pb) // 2] if valid_pb else None
     de = liabilities / equity if liabilities is not None and equity else None
     da = liabilities / total_assets if liabilities is not None and total_assets else None
     cr = current_assets / current_liabilities if current_assets is not None and current_liabilities else None
@@ -678,10 +688,13 @@ async def build_cafef_fundamentals(symbol: str) -> dict[str, Any]:
     health = {"total": health_total, "liq": 50 if cr is None else round(max(0, min(100, cr * 40))), "prof": round(max(0, min(100, 50 + (ratios["npm"] or 0) * 1.5))), "lev": round(max(0, min(100, 100 - (de or 0) * 25))), "eff": 50}
     return {
         "symbol": symbol, "name": f"Mã {symbol}", "sector": "Chưa xác định", "exchange": "",
-        "shares": None, "years": years, "revenue": revenue, "netProfit": net,
+        "shares": shares, "sharesDerived": shares is not None, "sharesNote": "Ước tính từ VCSH/BVPS CafeF" if shares is not None else None,
+        "eps": clean(raw["EPS"]), "bvps": clean(bvps), "indicatorHistory": indicator_history,
+        "years": years, "revenue": revenue, "netProfit": net,
         "margins": {"gpm": [None if revenue[i] in (None, 0) or gross[i] is None else gross[i] / revenue[i] * 100 for i in range(len(revenue))], "opm": [None] * len(revenue), "npm": [None if revenue[i] in (None, 0) or net[i] is None else net[i] / revenue[i] * 100 for i in range(len(revenue))]},
         "balanceSheet": bs, "incomeStatement": is_data, "cashFlow": cash, "fcfSeries": fcf_series, "fcf": fcf_series[-1] if fcf_series else None, "ebitda": None,
-        "ratios": ratios, "sectorAvg": {"pe": None, "pb": None, "ev": None, "roe": None, "npm": None, "de": None},
+        "ratios": ratios, "sectorAvg": {"pe": historical_pe, "pb": historical_pb, "ev": None, "roe": None, "npm": None, "de": None},
+        "sectorAvgLabel": "Trung vị PE/PB lịch sử 3 năm (đã lọc ngoại lệ)" if historical_pe is not None or historical_pb is not None else "Chưa có mốc tham chiếu lịch sử",
         "health": health, "quality": health_total, "peers": [], "strengths": [], "risks": [],
         "note": "Phân tích dùng BCTC và chỉ số do CafeF cung cấp; các chỉ tiêu CafeF không trả về được giữ là chưa có dữ liệu.",
         "hasFundamentals": True, "source": "cafef", "sourceUrl": "https://cafef.vn/du-lieu/hose/" + symbol.lower() + "-tai-chinh.chn",

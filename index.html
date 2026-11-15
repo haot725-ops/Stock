@@ -233,8 +233,8 @@ header{padding-top:env(safe-area-inset-top,0px)}
 <!-- TAB VL -->
 <div id="t-vl" class="tc hidden space-y-4">
 <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-<div class="card p-3.5 text-center"><div class="text-[11px] text-slate-500">P/E</div><div id="vPE" class="text-xl font-bold text-indigo-400 stat mt-0.5">—</div><div class="text-[10px] text-slate-600">Ngành <span id="sPE">—</span></div></div>
-<div class="card p-3.5 text-center"><div class="text-[11px] text-slate-500">P/B</div><div id="vPB" class="text-xl font-bold stat mt-0.5">—</div><div class="text-[10px] text-slate-600">Ngành <span id="sPB">—</span></div></div>
+<div class="card p-3.5 text-center"><div class="text-[11px] text-slate-500">P/E</div><div id="vPE" class="text-xl font-bold text-indigo-400 stat mt-0.5">—</div><div class="text-[10px] text-slate-600">Mốc tham chiếu <span id="sPE">—</span></div></div>
+<div class="card p-3.5 text-center"><div class="text-[11px] text-slate-500">P/B</div><div id="vPB" class="text-xl font-bold stat mt-0.5">—</div><div class="text-[10px] text-slate-600">Mốc tham chiếu <span id="sPB">—</span></div></div>
 <div class="card p-3.5 text-center"><div class="text-[11px] text-slate-500">EV/EBITDA</div><div id="vEV" class="text-xl font-bold stat mt-0.5">—</div><div class="text-[10px] text-slate-600">Ngành <span id="sEV">—</span></div></div>
 <div class="card p-3.5 text-center"><div class="text-[11px] text-slate-500">PEG</div><div id="vPG" class="text-xl font-bold stat mt-0.5">—</div><div class="text-[10px] text-slate-600">&lt;1 tốt</div></div>
 </div>
@@ -520,7 +520,10 @@ document.getElementById("dismissInstall")?.addEventListener("click",()=>document
 		const bs={"Tiền":cafefSeries(bal,"tiền và các khoản tương đương tiền"),"TS ngắn hạn":cafefSeries(bal,"tài sản ngắn hạn"),"TS dài hạn":cafefSeries(bal,"tài sản dài hạn"),"Tổng TS":cafefSeries(bal,"tổng cộng tài sản"),"Nợ NH":cafefSeries(bal,"nợ ngắn hạn"),"Nợ phải trả":cafefSeries(bal,"tổng cộng nợ phải trả"),"VCSH":cafefSeries(bal,"vốn chủ sở hữu")};
 		const isData={"DT thuần":fallbackRevenue,"GVHB":cafefSeries(inc,"giá vốn hàng bán"),"LN gộp":gross,"LN HĐKD":cafefSeries(inc,"lợi nhuận thuần từ hoạt động kinh doanh"),"LNTT":cafefSeries(inc,"tổng lợi nhuận kế toán trước thuế"),"LNST":net};
 		const last=a=>a.length?a[a.length-1]:null,total=last(bs["Tổng TS"]),liab=last(bs["Nợ phải trả"]),equity=last(bs.VCSH),ca=last(bs["TS ngắn hạn"]),clv=last(bs["Nợ NH"]);
-		const raw={roe:cafefIndicator(inds,"ROE"),roa:cafefIndicator(inds,"ROA"),npm:cafefIndicator(inds,"ROS"),gpm:cafefIndicator(inds,"GOS"),pe:cafefIndicator(inds,"PE"),pb:cafefIndicator(inds,"PB"),ic:cafefIndicator(inds,"KNTTLV")};
+			const indicatorHistory=Object.fromEntries(["EPS","BV","PE","PB"].map(code=>[code,inds.slice().sort((a,b)=>Number(a.year||0)-Number(b.year||0)).slice(-3).map(row=>cafefValue(row,code))]));
+			const raw={eps:cafefIndicator(inds,"EPS"),bvps:cafefIndicator(inds,"BV"),roe:cafefIndicator(inds,"ROE"),roa:cafefIndicator(inds,"ROA"),npm:cafefIndicator(inds,"ROS"),gpm:cafefIndicator(inds,"GOS"),pe:cafefIndicator(inds,"PE"),pb:cafefIndicator(inds,"PB"),ic:cafefIndicator(inds,"KNTTLV")};
+			const validPe=indicatorHistory.PE.filter(v=>v!=null&&v>0&&v<100).sort((a,b)=>a-b),validPb=indicatorHistory.PB.filter(v=>v!=null&&v>0).sort((a,b)=>a-b),historicalPe=validPe.length?validPe[Math.floor(validPe.length/2)]:null,historicalPb=validPb.length?validPb[Math.floor(validPb.length/2)]:null;
+			const shares=equity!=null&&raw.bvps?equity*1000/raw.bvps:null;
 		const ratios={roe:raw.roe||null,roa:raw.roa||null,npm:raw.npm||null,gpm:raw.gpm||null,opm:null,cr:ca&&clv?ca/clv:null,qr:null,cash:null,de:liab&&equity?liab/equity:null,ic:raw.ic||null,da:liab&&total?liab/total:null,at:null,it:null,rt:null,pe:raw.pe||null,pb:raw.pb||null,ps:null,ev:null,peg:null,dy:null,fy:null,rg:null,ng:null,eg:null};
 		if(fallbackRevenue.length>1&&fallbackRevenue.at(-2)&&fallbackRevenue.at(-1)!=null)ratios.rg=(fallbackRevenue.at(-1)/fallbackRevenue.at(-2)-1)*100;
 		if(net.length>1&&net.at(-2)&&net.at(-1)!=null)ratios.ng=(net.at(-1)/net.at(-2)-1)*100;
@@ -528,7 +531,7 @@ document.getElementById("dismissInstall")?.addEventListener("click",()=>document
 		if(ratios.npm==null&&last(net)!=null&&last(fallbackRevenue))ratios.npm=last(net)/last(fallbackRevenue)*100;
 		const healthTotal=Math.round(Math.max(0,Math.min(100,50+(ratios.roe||0)*1.2-(ratios.de||0)*8))),q=quotePayload[0]||{};
 		let price=Number(q.lastPrice||0);if(price&&price<1000)price*=1000;
-		return {symbol,name:`Mã ${symbol}`,sector:"Chưa xác định",exchange:"—",price:price||null,changePercent:q.changePc!=null?Number(q.changePc):0,years:inc.rows.map(x=>Number(x.year)),revenue:fallbackRevenue,netProfit:net,margins:{g:fallbackRevenue.map((v,i)=>v&&gross[i]!=null?gross[i]/v*100:null),o:fallbackRevenue.map(()=>null),n:fallbackRevenue.map((v,i)=>v&&net[i]!=null?net[i]/v*100:null)},balanceSheet:bs,incomeStatement:isData,cashFlow:cash,fcfSeries,fcf:fcfSeries.at(-1)??null,ratios,sectorAvg:{pe:null,pb:null,ev:null,roe:null,npm:null,de:null},health:{total:healthTotal,liq:ca&&clv?Math.round(Math.min(100,ca/clv*40)):50,prof:Math.round(Math.min(100,50+(ratios.npm||0)*1.5)),lev:Math.round(Math.max(0,100-(ratios.de||0)*25)),eff:50},quality:healthTotal,peers:[],strengths:[],risks:[],ebitda:null,note:"Phân tích dùng BCTC, LCTT và chỉ số do CafeF cung cấp; các chỉ tiêu thiếu được giữ là chưa có dữ liệu.",hasFundamentals:true,source:"cafef",sourceUrl:`https://cafef.vn/du-lieu/hose/${symbol.toLowerCase()}-tai-chinh.chn`,retrievedAt:new Date().toISOString(),currency:"VND",unit:"tỷ đồng"};
+			return {symbol,name:`Mã ${symbol}`,sector:"Chưa xác định",exchange:"—",price:price||null,changePercent:q.changePc!=null?Number(q.changePc):0,marketCap:price&&shares?price*shares/1e6:null,shares,sharesDerived:shares!=null,sharesNote:shares!=null?"Ước tính từ VCSH/BVPS CafeF":null,eps:raw.eps,bvps:raw.bvps,indicatorHistory,years:inc.rows.map(x=>Number(x.year)),revenue:fallbackRevenue,netProfit:net,margins:{g:fallbackRevenue.map((v,i)=>v&&gross[i]!=null?gross[i]/v*100:null),o:fallbackRevenue.map(()=>null),n:fallbackRevenue.map((v,i)=>v&&net[i]!=null?net[i]/v*100:null)},balanceSheet:bs,incomeStatement:isData,cashFlow:cash,fcfSeries,fcf:fcfSeries.at(-1)??null,ratios,sectorAvg:{pe:historicalPe,pb:historicalPb,ev:null,roe:null,npm:null,de:null},sectorAvgLabel:"Trung vị PE/PB lịch sử 3 năm (đã lọc ngoại lệ)",health:{total:healthTotal,liq:ca&&clv?Math.round(Math.min(100,ca/clv*40)):50,prof:Math.round(Math.min(100,50+(ratios.npm||0)*1.5)),lev:Math.round(Math.max(0,100-(ratios.de||0)*25)),eff:50},quality:healthTotal,peers:[],strengths:[],risks:[],ebitda:null,note:"Phân tích dùng BCTC, LCTT và chỉ số do CafeF cung cấp; số cổ phiếu nếu có là ước tính từ VCSH/BVPS; các chỉ tiêu thiếu được giữ là chưa có dữ liệu.",hasFundamentals:true,source:"cafef",sourceUrl:`https://cafef.vn/du-lieu/hose/${symbol.toLowerCase()}-tai-chinh.chn`,retrievedAt:new Date().toISOString(),currency:"VND",unit:"tỷ đồng"};
 	}
 	async function render(tk){
 	showView("analyze",{keepScroll:1});
@@ -547,7 +550,7 @@ document.getElementById("dismissInstall")?.addEventListener("click",()=>document
 			d={...payload,t:payload.symbol,sec:payload.sector||"Chưa xác định",ex:payload.exchange||"—",price:payload.price,chg:payload.changePercent||0,mcap:payload.marketCap,sh:payload.shares,h:{t:payload.health?.total||0,l:payload.health?.liq||0,p:payload.health?.prof||0,v:payload.health?.lev||0,e:payload.health?.eff||0},q:payload.quality||0,r:payload.ratios||{},sa:payload.sectorAvg||{},ys:payload.years||[],rev:payload.revenue||[],np:payload.netProfit||[],m:payload.margins||{},bs:payload.balanceSheet||{},is:payload.incomeStatement||{},str:payload.strengths||[],rsk:payload.risks||{}};
 			}
 			if(d&&!d.t){const payload=d;d={...payload,t:payload.symbol,sec:payload.sector||"Chưa xác định",ex:payload.exchange||"—",price:payload.price,chg:payload.changePercent||0,mcap:payload.marketCap,sh:payload.shares,h:{t:payload.health?.total||0,l:payload.health?.liq||0,p:payload.health?.prof||0,v:payload.health?.lev||0,e:payload.health?.eff||0},q:payload.quality||0,r:payload.ratios||{},sa:payload.sectorAvg||{},ys:payload.years||[],rev:payload.revenue||[],np:payload.netProfit||[],m:payload.margins||{},bs:payload.balanceSheet||{},is:payload.incomeStatement||{},str:payload.strengths||[],rsk:payload.risks||{}};}
-			if(d){d.m={g:d.m?.g||d.m?.gpm||[],o:d.m?.o||d.m?.opm||[],n:d.m?.n||d.m?.npm||[]};d.cf=d.cf||d.cashFlow||{};}
+				if(d){d.m={g:d.m?.g||d.m?.gpm||[],o:d.m?.o||d.m?.opm||[],n:d.m?.n||d.m?.npm||[]};d.cf=d.cf||d.cashFlow||{};d.ratios=d.ratios||{};d.ratios.pe=d.ratios.pe||((d.price&&d.eps)?d.price/d.eps:null);d.ratios.pb=d.ratios.pb||((d.price&&d.bvps)?d.price/d.bvps:null);d.marketCap=d.marketCap||((d.price&&d.shares)?d.price*d.shares/1e6:null);}
 		}catch(error){
 		document.getElementById("loadingState").classList.add("hidden");
 		toast(error.message||"Không lấy được dữ liệu BCTC CafeF");
@@ -557,14 +560,15 @@ document.getElementById("dismissInstall")?.addEventListener("click",()=>document
 document.getElementById("loadingState").classList.add("hidden");
 document.getElementById("dashboard").classList.remove("hidden");
 dc();
-const r=d.r,sa=d.sa;
+	const r=d.r,sa=d.sa;
+	d.mcap=d.mcap||d.marketCap||((d.price&&d.sh)?d.price*d.sh/1e6:null);
 document.getElementById("tkLogo").textContent=d.t.slice(0,2);
 document.getElementById("cname").textContent=d.name;
 document.getElementById("cticker").textContent=d.t;
 document.getElementById("csector").textContent=d.sec;
 document.getElementById("cexch").textContent=d.ex;
 	document.getElementById("cmcap").textContent=d.mcap!=null?d.mcap.toFixed(1)+" nghìn tỷ":"—";
-	document.getElementById("cshares").textContent=d.sh!=null?d.sh.toLocaleString("vi-VN")+" tr cp":"—";
+		document.getElementById("cshares").textContent=d.sh!=null?d.sh.toLocaleString("vi-VN")+" tr cp"+(d.sharesDerived?" (ước tính)":""):"—";
 document.getElementById("cprice").textContent=fp(d.price);
 const ch=document.getElementById("cchange");ch.textContent=(d.chg>=0?"+":"")+d.chg.toFixed(2)+"%";ch.className="text-sm font-medium "+(d.chg>=0?"text-emerald-400":"text-rose-400");
 const gr=d.h.t>=85?"A":d.h.t>=75?"B+":d.h.t>=65?"B":d.h.t>=55?"C":"D";
@@ -577,7 +581,7 @@ const ve=document.getElementById("vVerdict");
 	else if(up>15){ve.textContent="Hấp dẫn";ve.className="text-lg font-bold text-emerald-400";}
 	else if(up>-10){ve.textContent="Hợp lý";ve.className="text-lg font-bold text-amber-400";}
 	else{ve.textContent="Đắt";ve.className="text-lg font-bold text-rose-400";}
-	document.getElementById("vSub").textContent="P/E "+(r.pe==null?"—":r.pe.toFixed(1))+"x vs ngành "+(sa.pe==null?"—":sa.pe.toFixed(1))+"x";
+		document.getElementById("vSub").textContent="P/E "+(r.pe==null?"—":r.pe.toFixed(1))+"x vs "+(d.sectorAvgLabel||"mốc tham chiếu")+" "+(sa.pe==null?"—":sa.pe.toFixed(1))+"x";
 	const cR=d.rev.length>=3&&d.rev[0]>0&&d.rev[2]!=null?(Math.pow(d.rev[2]/d.rev[0],.5)-1)*100:null,cN=d.np.length>=3&&d.np[0]>0&&d.np[2]!=null?(Math.pow(d.np[2]/d.np[0],.5)-1)*100:null;
 	const gv=document.getElementById("gVerdict");gv.textContent=cR==null?"—":(cR>=0?"+":"")+cR.toFixed(1)+"%";gv.className="text-lg font-bold "+(cR==null?"text-slate-400":cR>=10?"text-emerald-400":cR>=0?"text-amber-400":"text-rose-400");
 document.getElementById("strengths").innerHTML=d.str.map(s=>`<li class="flex gap-2"><span class="text-emerald-400">✓</span><span class="text-slate-300">${s}</span></li>`).join("");
@@ -606,14 +610,14 @@ document.getElementById("dpI").textContent=npm>.12&&at>1.2?"ROE cao nhờ biên 
 // val
 	document.getElementById("vPE").textContent=r.pe==null?"—":r.pe.toFixed(1);document.getElementById("vPB").textContent=r.pb==null?"—":r.pb.toFixed(2);
 	document.getElementById("vEV").textContent=r.ev!=null?r.ev.toFixed(1):"—";document.getElementById("vPG").textContent=r.peg==null?"—":r.peg.toFixed(2);
-	document.getElementById("sPE").textContent=sa.pe==null?"—":sa.pe.toFixed(1)+"x";document.getElementById("sPB").textContent=sa.pb==null?"—":sa.pb.toFixed(2)+"x";document.getElementById("sEV").textContent=sa.ev!=null?sa.ev.toFixed(1)+"x":"—";
-	const eps=d.price&&r.pe?d.price/r.pe:null,bv=d.price&&r.pb?d.price/r.pb:null,fpe=eps&&sa.pe?Math.round(eps*sa.pe):null,fpb=bv&&sa.pb?Math.round(bv*sa.pb):null;
+		document.getElementById("sPE").textContent=sa.pe==null?"—":sa.pe.toFixed(1)+"x";document.getElementById("sPB").textContent=sa.pb==null?"—":sa.pb.toFixed(2)+"x";document.getElementById("sEV").textContent=sa.ev!=null?sa.ev.toFixed(1)+"x":"—";
+		const eps=d.eps||((d.price&&r.pe)?d.price/r.pe:null),bv=d.bvps||((d.price&&r.pb)?d.price/r.pb:null),fpe=eps&&sa.pe?Math.round(eps*sa.pe):null,fpb=bv&&sa.pb?Math.round(bv*sa.pb):null;
 	let fev=null;if(r.ev&&sa.ev&&d.ebitda&&d.sh)fev=Math.round(d.ebitda*sa.ev/d.sh*1000);
 	const vs=[fpe,fpb,fev].filter(v=>Number.isFinite(v)),fa=vs.length?Math.round(vs.reduce((a,b)=>a+b,0)/vs.length):null,up2=fa!=null&&d.price?(((fa-d.price)/d.price)*100).toFixed(1):null;
 	document.getElementById("fPE").textContent=fpe!=null?fp(fpe):"—";document.getElementById("fPB").textContent=fpb!=null?fp(fpb):"—";document.getElementById("fEV").textContent=fev!=null?fp(fev):"—";
 	document.getElementById("fAvg").textContent=fa!=null?fp(fa):"—";
 	const ue=document.getElementById("ups");ue.textContent=up2==null?"—":(up2>=0?"+":"")+up2+"%";ue.className="font-semibold "+(up2==null?"text-slate-400":up2>=0?"text-emerald-400":"text-rose-400");
-if(d.fcf){const tv=d.fcf*1.05/.06;document.getElementById("fcf").textContent=fmt(d.fcf)+" tỷ";document.getElementById("tv").textContent=(tv/1000).toFixed(1)+" nghìn tỷ";document.getElementById("dcf").textContent=fp(Math.round(tv/d.sh*1000));}
+	if(d.fcf&&d.sh){const tv=d.fcf*1.05/.06;document.getElementById("fcf").textContent=fmt(d.fcf)+" tỷ";document.getElementById("tv").textContent=(tv/1000).toFixed(1)+" nghìn tỷ";document.getElementById("dcf").textContent=fp(Math.round(tv/d.sh*1000));}
 else{document.getElementById("fcf").textContent="—";document.getElementById("tv").textContent="—";document.getElementById("dcf").textContent="—";}
 sens(d);peers(d);risk(d);charts(d);tab("ov");tuneInit(d);aiDraw(d.t);
 },500);
@@ -624,7 +628,7 @@ function ft(id,obj){const tb=document.getElementById(id);tb.innerHTML="";for(con
 function sens(d){if(!d.fcf){document.querySelector("#sensT thead").innerHTML="";document.querySelector("#sensT tbody").innerHTML='<tr><td class="text-slate-500 text-sm py-3">Không đủ FCF</td></tr>';return;}
 const ws=[.09,.1,.11,.12,.13],gs=[.03,.04,.05,.06,.07];let h='<tr class="text-slate-500"><th class="py-1.5 px-2 text-left">WACC\\g</th>';gs.forEach(g=>h+=`<th class="py-1.5 px-2 text-right">${(g*100).toFixed(0)}%</th>`);h+="</tr>";
 document.querySelector("#sensT thead").innerHTML=h;let b="";
-ws.forEach(w=>{b+=`<tr><td class="py-1.5 px-2 text-slate-400 font-medium">${(w*100).toFixed(0)}%</td>`;gs.forEach(g=>{if(w<=g){b+='<td class="py-1.5 px-2 text-right text-slate-600">—</td>';return;}const ps=Math.round(d.fcf*(1+g)/(w-g)/d.sh);const base=Math.abs(w-.11)<.001&&Math.abs(g-.05)<.001;b+=`<td class="py-1.5 px-2 text-right font-medium ${base?"bg-indigo-600/30 text-indigo-300 rounded":""}">${ps}</td>`;});b+="</tr>";});
+	if(!d.sh){document.querySelector("#sensT tbody").innerHTML='<tr><td class="text-slate-500 text-sm py-3">Chưa có số cổ phiếu để quy đổi giá/cp</td></tr>';return;}ws.forEach(w=>{b+=`<tr><td class="py-1.5 px-2 text-slate-400 font-medium">${(w*100).toFixed(0)}%</td>`;gs.forEach(g=>{if(w<=g){b+='<td class="py-1.5 px-2 text-right text-slate-600">—</td>';return;}const ps=Math.round(d.fcf*(1+g)/(w-g)/d.sh);const base=Math.abs(w-.11)<.001&&Math.abs(g-.05)<.001;b+=`<td class="py-1.5 px-2 text-right font-medium ${base?"bg-indigo-600/30 text-indigo-300 rounded":""}">${ps}</td>`;});b+="</tr>";});
 document.querySelector("#sensT tbody").innerHTML=b;}
 
 function peers(d){document.getElementById("prT").innerHTML=d.peers.map(p=>{const s=p.t===d.t;return`<tr class="${s?"bg-indigo-600/10":"hover:bg-slate-800/30"}"><td class="py-2 font-semibold ${s?"text-indigo-300":""}">${p.t}${s?" ★":""}</td><td class="py-2 text-right stat">${p.pe.toFixed(1)}</td><td class="py-2 text-right stat">${p.pb.toFixed(2)}</td><td class="py-2 text-right stat">${p.roe.toFixed(1)}</td><td class="py-2 text-right stat">${p.de.toFixed(2)}</td><td class="py-2 text-right stat">${p.npm.toFixed(1)}</td><td class="py-2 text-right font-semibold ${p.h>=80?"text-emerald-400":p.h>=65?"text-amber-400":"text-rose-400"}">${p.h}</td></tr>`;}).join("");}
