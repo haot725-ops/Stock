@@ -480,6 +480,45 @@ window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();dp=e;docume
 document.getElementById("installBtn")?.addEventListener("click",async()=>{if(!dp)return;dp.prompt();await dp.userChoice;dp=null;document.getElementById("installBanner").classList.add("hidden");});
 document.getElementById("dismissInstall")?.addEventListener("click",()=>document.getElementById("installBanner").classList.add("hidden"));
 
+	async function cafefReport(symbol,type){
+		const rows=[];let labels={};
+		for(let page=1;page<=11;page++){
+			const u=`https://apiweb.cafef.vn/api/v1/BCTC/GetReportSummary?symbol=${encodeURIComponent(symbol)}&pageIndex=${page}&pageSize=4&reportType=${type}&TypeTime=NAM`;
+			const p=await (await fetch(u,{cache:"no-store"})).json(),v=p.value||{};
+			(v.templace||[]).forEach(t=>(t.data||[]).forEach(x=>{if(x.code&&x.name)labels[x.code]=x.name;}));
+			const pageRows=[];(v.data||[]).forEach(g=>(g.data||[]).forEach(x=>pageRows.push(x)));
+			if(!pageRows.length)break;rows.push(...pageRows);if(rows.length>=Number(v.count||0))break;
+		}
+		if(rows.some(x=>String(x.symbol||"").toUpperCase()!==symbol))throw new Error("CafeF trả sai mã cổ phiếu");
+		return {rows:rows.sort((a,b)=>Number(a.year||0)-Number(b.year||0)).slice(-3),labels};
+	}
+	function cafefValue(row,code){const x=(row.data||[]).find(v=>v.code===code);return x&&x.value!=null?Number(x.value):null;}
+	function cafefCode(labels,...terms){return Object.entries(labels).find(([,name])=>terms.every(t=>String(name).toLowerCase().includes(t)))?.[0]||null;}
+	function cafefSeries(report,...terms){const code=cafefCode(report.labels,...terms);return report.rows.map(row=>{const v=code?cafefValue(row,code):null;return v==null?null:v/1e9;});}
+	function cafefIndicator(rows,code){return rows.length?cafefValue(rows[0],code):null;}
+	async function fetchStaticCafeF(symbol){
+		const [inc,bal,indPayload,quotePayload]=await Promise.all([
+			cafefReport(symbol,"KQKD"),cafefReport(symbol,"CDKT"),
+			fetch(`https://apiweb.cafef.vn/api/v2/BCTC/FinancialIndicators?symbol=${encodeURIComponent(symbol)}&pageIndex=1&pageSize=100`,{cache:"no-store"}).then(r=>r.json()),
+			fetch(`https://bgapidatafeed.vps.com.vn/getliststockdata/${encodeURIComponent(symbol)}`,{cache:"no-store"}).then(r=>r.json()).catch(()=>[])
+		]);
+		if(!inc.rows.length||!bal.rows.length)throw new Error("CafeF chưa có đủ BCTC cho "+symbol);
+		const inds=(indPayload.value||{}).data||[],revenue0=cafefSeries(inc,"doanh thu thuần"),revenue=revenue0.every(x=>x==null)?cafefSeries(inc,"thu nhập lãi thuần"):revenue0;
+		const fallbackRevenue=revenue.every(x=>x==null)?cafefSeries(inc,"tổng thu nhập hoạt động"):revenue;
+		const gross=cafefSeries(inc,"lợi nhuận gộp"),net=cafefSeries(inc,"lợi nhuận sau thuế");
+		const bs={"Tiền":cafefSeries(bal,"tiền và các khoản tương đương tiền"),"TS ngắn hạn":cafefSeries(bal,"tài sản ngắn hạn"),"TS dài hạn":cafefSeries(bal,"tài sản dài hạn"),"Tổng TS":cafefSeries(bal,"tổng cộng tài sản"),"Nợ NH":cafefSeries(bal,"nợ ngắn hạn"),"Nợ phải trả":cafefSeries(bal,"tổng cộng nợ phải trả"),"VCSH":cafefSeries(bal,"vốn chủ sở hữu")};
+		const isData={"DT thuần":fallbackRevenue,"GVHB":cafefSeries(inc,"giá vốn hàng bán"),"LN gộp":gross,"LN HĐKD":cafefSeries(inc,"lợi nhuận thuần từ hoạt động kinh doanh"),"LNTT":cafefSeries(inc,"tổng lợi nhuận kế toán trước thuế"),"LNST":net};
+		const last=a=>a.length?a[a.length-1]:null,total=last(bs["Tổng TS"]),liab=last(bs["Nợ phải trả"]),equity=last(bs.VCSH),ca=last(bs["TS ngắn hạn"]),clv=last(bs["Nợ NH"]);
+		const raw={roe:cafefIndicator(inds,"ROE"),roa:cafefIndicator(inds,"ROA"),npm:cafefIndicator(inds,"ROS"),gpm:cafefIndicator(inds,"GOS"),pe:cafefIndicator(inds,"PE"),pb:cafefIndicator(inds,"PB"),ic:cafefIndicator(inds,"KNTTLV")};
+		const ratios={roe:raw.roe||null,roa:raw.roa||null,npm:raw.npm||null,gpm:raw.gpm||null,opm:null,cr:ca&&clv?ca/clv:null,qr:null,cash:null,de:liab&&equity?liab/equity:null,ic:raw.ic||null,da:liab&&total?liab/total:null,at:null,it:null,rt:null,pe:raw.pe||null,pb:raw.pb||null,ps:null,ev:null,peg:null,dy:null,fy:null,rg:null,ng:null,eg:null};
+		if(fallbackRevenue.length>1&&fallbackRevenue.at(-2)&&fallbackRevenue.at(-1)!=null)ratios.rg=(fallbackRevenue.at(-1)/fallbackRevenue.at(-2)-1)*100;
+		if(net.length>1&&net.at(-2)&&net.at(-1)!=null)ratios.ng=(net.at(-1)/net.at(-2)-1)*100;
+		if(ratios.gpm==null&&last(gross)!=null&&last(fallbackRevenue))ratios.gpm=last(gross)/last(fallbackRevenue)*100;
+		if(ratios.npm==null&&last(net)!=null&&last(fallbackRevenue))ratios.npm=last(net)/last(fallbackRevenue)*100;
+		const healthTotal=Math.round(Math.max(0,Math.min(100,50+(ratios.roe||0)*1.2-(ratios.de||0)*8))),q=quotePayload[0]||{};
+		let price=Number(q.lastPrice||0);if(price&&price<1000)price*=1000;
+		return {symbol,name:`Mã ${symbol}`,sector:"Chưa xác định",exchange:"—",price:price||null,changePercent:q.changePc!=null?Number(q.changePc):0,years:inc.rows.map(x=>Number(x.year)),revenue:fallbackRevenue,netProfit:net,margins:{g:fallbackRevenue.map((v,i)=>v&&gross[i]!=null?gross[i]/v*100:null),o:fallbackRevenue.map(()=>null),n:fallbackRevenue.map((v,i)=>v&&net[i]!=null?net[i]/v*100:null)},balanceSheet:bs,incomeStatement:isData,ratios,sectorAvg:{pe:null,pb:null,ev:null,roe:null,npm:null,de:null},health:{total:healthTotal,liq:ca&&clv?Math.round(Math.min(100,ca/clv*40)):50,prof:Math.round(Math.min(100,50+(ratios.npm||0)*1.5)),lev:Math.round(Math.max(0,100-(ratios.de||0)*25)),eff:50},quality:healthTotal,peers:[],strengths:[],risks:[],fcf:null,ebitda:null,note:"Phân tích dùng BCTC và chỉ số do CafeF cung cấp; các chỉ tiêu thiếu được giữ là chưa có dữ liệu.",hasFundamentals:true,source:"cafef",sourceUrl:`https://cafef.vn/du-lieu/hose/${symbol.toLowerCase()}-tai-chinh.chn`,retrievedAt:new Date().toISOString(),currency:"VND",unit:"tỷ đồng"};
+	}
 	async function render(tk){
 	showView("analyze",{keepScroll:1});
 	const symbol=tk.toUpperCase();
@@ -487,12 +526,18 @@ document.getElementById("dismissInstall")?.addEventListener("click",()=>document
 	document.getElementById("loadingState").classList.remove("hidden");
 	document.getElementById("dashboard").classList.add("hidden");
 	let d;
-	try{
-		const response=await fetch(`/api/stock/${encodeURIComponent(symbol)}`);
-		const payload=await response.json();
-		if(!response.ok||!payload.hasFundamentals)throw new Error(payload.message||"Chưa có BCTC CafeF xác minh cho mã này");
-		d={...payload,t:payload.symbol,sec:payload.sector||"Chưa xác định",ex:payload.exchange||"—",price:payload.price,chg:payload.changePercent||0,mcap:payload.marketCap,sh:payload.shares,h:{t:payload.health?.total||0,l:payload.health?.liq||0,p:payload.health?.prof||0,v:payload.health?.lev||0,e:payload.health?.eff||0},q:payload.quality||0,r:payload.ratios||{},sa:payload.sectorAvg||{},ys:payload.years||[],rev:payload.revenue||[],np:payload.netProfit||[],m:payload.margins||{},bs:payload.balanceSheet||{},is:payload.incomeStatement||{},str:payload.strengths||[],rsk:payload.risks||{}};
-	}catch(error){
+		try{
+			const response=await fetch(`/api/stock/${encodeURIComponent(symbol)}`,{cache:"no-store"});
+			const contentType=response.headers.get("content-type")||"";
+			const payload=contentType.includes("json")?await response.json():null;
+			if(!payload){d=await fetchStaticCafeF(symbol);}
+			else {
+			if(!response.ok||!payload.hasFundamentals)throw new Error(payload.message||"Chưa có BCTC CafeF xác minh cho mã này");
+			d={...payload,t:payload.symbol,sec:payload.sector||"Chưa xác định",ex:payload.exchange||"—",price:payload.price,chg:payload.changePercent||0,mcap:payload.marketCap,sh:payload.shares,h:{t:payload.health?.total||0,l:payload.health?.liq||0,p:payload.health?.prof||0,v:payload.health?.lev||0,e:payload.health?.eff||0},q:payload.quality||0,r:payload.ratios||{},sa:payload.sectorAvg||{},ys:payload.years||[],rev:payload.revenue||[],np:payload.netProfit||[],m:payload.margins||{},bs:payload.balanceSheet||{},is:payload.incomeStatement||{},str:payload.strengths||[],rsk:payload.risks||{}};
+			}
+			if(d&&!d.t){const payload=d;d={...payload,t:payload.symbol,sec:payload.sector||"Chưa xác định",ex:payload.exchange||"—",price:payload.price,chg:payload.changePercent||0,mcap:payload.marketCap,sh:payload.shares,h:{t:payload.health?.total||0,l:payload.health?.liq||0,p:payload.health?.prof||0,v:payload.health?.lev||0,e:payload.health?.eff||0},q:payload.quality||0,r:payload.ratios||{},sa:payload.sectorAvg||{},ys:payload.years||[],rev:payload.revenue||[],np:payload.netProfit||[],m:payload.margins||{},bs:payload.balanceSheet||{},is:payload.incomeStatement||{},str:payload.strengths||[],rsk:payload.risks||{}};}
+			if(d){d.m={g:d.m?.g||d.m?.gpm||[],o:d.m?.o||d.m?.opm||[],n:d.m?.n||d.m?.npm||[]};}
+		}catch(error){
 		document.getElementById("loadingState").classList.add("hidden");
 		toast(error.message||"Không lấy được dữ liệu BCTC CafeF");
 		return;
